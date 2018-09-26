@@ -31,12 +31,12 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
-import org.urban.data.io.FileSystem;
-import org.urban.data.io.json.CSVFileWriter;
-import org.urban.data.io.json.EscapedJsonParser;
-import org.urban.data.io.json.JsonDatasetParser;
-import org.urban.data.io.json.JsonPrimitiveEmitter;
-import org.urban.data.io.json.JsonSchemaGenerator;
+import org.urban.data.core.io.FileSystem;
+import org.urban.data.core.io.json.CSVFileWriter;
+import org.urban.data.core.io.json.EscapedJsonParser;
+import org.urban.data.core.io.json.JsonDatasetParser;
+import org.urban.data.core.io.json.JsonPrimitiveEmitter;
+import org.urban.data.core.io.json.JsonSchemaGenerator;
 
 /**
  * Convert a set of Socrata dataset files in JSON format into TSV format.

@@ -16,46 +16,54 @@
 package org.urban.data.provider.socrata;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.urban.data.core.io.FileSystem;
 
 /**
- * Download part of the Socrata resource catalog.
+ * Print a list of available domains at the Socrata API catalogs to standard
+ * output.
  * 
- * Downloads information for all resources of given type in a given domain.
+ * Output is tab-delimited with the first value being the domain name and the
+ * second value the domain resource count.
+ * 
+ * If the optional output file parameter is given output is written to the file
+ * instead of standard output.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class SocrataCatalogDownload {
+public class SocrataDomains {
+   
+    public static final String COMMAND = 
+            "Usage:\n" +
+            "  {<output-file>}";
     
-    private static final String COMMAND =
-            "Usage: <catalog-file> <type> {<domain>}";
+    public static final Logger LOGGER = Logger.getGlobal();
     
-    private static final Logger LOGGER = Logger.getGlobal();
+    public static final String VERSION = "0.1.0";
     
     public static void main(String[] args) {
         
-        if ((args.length < 2) || (args.length > 3)) {
+        if (args.length > 1) {
             System.out.println(COMMAND);
             System.exit(-1);
         }
         
-        File outputFile = new File(args[0]);
-        String type = args[1];
-        String domain = null;
-        if (args.length == 3) {
-            domain = args[2];
-        }
-        
-        SocrataCatalog catalog = new SocrataCatalog(outputFile);
+        PrintWriter out;
         try {
-            if (domain != null) {
-                catalog.download(domain, type);
+            if (args.length == 1) {
+                out = FileSystem.openPrintWriter(new File(args[0]));
             } else {
-                catalog.download(type);
+                out = new PrintWriter(System.out);
             }
+            for (SocrataDomain domain : SocrataCatalog.listDomains()) {
+                out.println(domain.name() + "\t" + domain.count());
+            }
+            out.close();
         } catch (java.net.URISyntaxException | java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
+            System.exit(-1);
         }
     }
 }

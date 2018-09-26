@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.query.json.JQuery;
-import org.urban.data.io.FileSystem;
+import org.urban.data.core.io.FileSystem;
 
 /**
  * Download all dataset files for a given domain from the Socrata API.
@@ -45,7 +45,7 @@ import org.urban.data.io.FileSystem;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class SocrataDatasetDownload {
+public class SocrataDatasets {
     
     private static final String COMMAND =
             "Usage:\n" +
@@ -57,6 +57,8 @@ public class SocrataDatasetDownload {
             "  <output-directory>";
     
     private static final Logger LOGGER = Logger.getGlobal();
+    
+    public static final String VERSION = "0.1.0";
     
     private class DatasetDownloadTask implements Runnable {
         
@@ -204,6 +206,8 @@ public class SocrataDatasetDownload {
     
     public static void main(String[] args) {
         
+	System.out.println("Urban Data Integration - Socrata Dataset Download - Version (" + VERSION + ")\n");
+
         if (args.length != 6) {
             System.out.println(COMMAND);
             System.exit(-1);
@@ -217,7 +221,7 @@ public class SocrataDatasetDownload {
         File outputDir = new File(args[5]);
         
         try {
-            new SocrataDatasetDownload()
+            new SocrataDatasets()
                     .run(
                             catalogFile,
                             domain,

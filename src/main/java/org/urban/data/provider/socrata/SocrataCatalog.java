@@ -16,7 +16,6 @@
 package org.urban.data.provider.socrata;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -27,14 +26,17 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.urban.data.io.FileSystem;
+import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.query.json.JFilter;
 import org.urban.data.core.query.json.JQuery;
+import org.urban.data.core.sort.NamedObjectComparator;
 
 /**
  * Methods for downloading and querying the Socrata resource catalog.
@@ -47,6 +49,32 @@ public class SocrataCatalog {
      * Socrata app token to be included in requests.
      */
     public static final String APP_TOKEN = "e8DxKoPGZ2iU_Y2orwM9HL-cpTYrKipvdJRd";
+    
+    private static final String COMMAND =
+            "Usage:\n" +
+            "  <catalog-file>\n" +
+            "  <resource-type> [\n" +
+            "    api |\n" +
+            "    calendar |\n" +
+            "    chart |\n" +
+            "    datalens |\n" +
+            "    dataset |\n" +
+            "    federated_href |\n" +
+            "    file |\n" +
+            "    filter |\n" +
+            "    form |\n" +
+            "    href |\n" +
+            "    link |\n" +
+            "    map |\n" +
+            "    measure |\n" +
+            "    story |\n" +
+            "    visualization\n" +
+            "  ]\n" +
+            "  {<domain>}";
+    
+    private static final Logger LOGGER = Logger.getGlobal();
+    
+    public static final String VERSION = "0.1.0";
 
     /**
      * Base URL for Socrata dataset catalog. Results are limited to a maximum
@@ -93,15 +121,15 @@ public class SocrataCatalog {
      */
     public void download(String type)  throws java.net.URISyntaxException, java.io.IOException {
         
-        List<String> domains = SocrataCatalog.listDomains();
+        List<SocrataDomain> domains = SocrataCatalog.listDomains();
         
         try (JsonWriter out = new JsonWriter(
                 new OutputStreamWriter(FileSystem.openOutputFile(_catalog)))
         ) {
             out.beginArray();
-            for (String domain : domains) {
-                System.out.println(domain);
-                this.downloadAndWriteResources(domain, type, out);
+            for (SocrataDomain domain : domains) {
+                System.out.println(domain.name());
+                this.downloadAndWriteResources(domain.name(), type, out);
             }
             out.endArray();
         }
@@ -210,9 +238,9 @@ public class SocrataCatalog {
      * @throws java.net.URISyntaxException 
      * @throws java.io.IOException 
      */
-    public static List<String> listDomains() throws  java.net.URISyntaxException, java.io.IOException {
+    public static List<SocrataDomain> listDomains() throws  java.net.URISyntaxException, java.io.IOException {
         
-        List<String> result = new ArrayList<>();
+        List<SocrataDomain> result = new ArrayList<>();
         
         HttpClient client = HttpClientBuilder.create().build();
 
@@ -221,7 +249,6 @@ public class SocrataCatalog {
                 .setScheme("http")
                 .setHost(api[0])
                 .setPath(api[1] + "/domains");
-            System.out.println(uri.toString());
             HttpGet request = new HttpGet(uri.build());
             request.addHeader("X-App-Token", APP_TOKEN);
             HttpResponse response = client.execute(request);
@@ -235,9 +262,13 @@ public class SocrataCatalog {
                         reader.beginArray();
                         while (reader.hasNext()) {
                             JsonObject doc = new JsonParser().parse(reader).getAsJsonObject();
-                            JsonElement domain = new JQuery("thing").eval(doc);
-                            if (domain != null) {
-                                result.add(domain.getAsString());
+                            if ((doc.has("thing")) && (doc.has("count"))) {
+                                result.add(
+                                        new SocrataDomain(
+                                                doc.get("thing").getAsString(),
+                                                doc.get("count").getAsInt()
+                                        )
+                                );
                             }
                         }
                         reader.endArray();
@@ -249,7 +280,8 @@ public class SocrataCatalog {
             }
         }
         
-        Collections.sort(result);
+        Collections.sort(result, new NamedObjectComparator<>());
+        
         return result;
     }
     
@@ -287,5 +319,33 @@ public class SocrataCatalog {
     public List<String[]> query(List<JQuery> select) throws java.io.IOException {
         
         return this.query(select, new ArrayList<JFilter>());
+    }
+    
+    public static void main(String[] args) {
+        
+	System.out.println("Urban Data Integration - Socrata Catalog - Version (" + VERSION + ")\n");
+
+        if ((args.length < 2) || (args.length > 3)) {
+            System.out.println(COMMAND);
+            System.exit(-1);
+        }
+        
+        File outputFile = new File(args[0]);
+        String type = args[1];
+        String domain = null;
+        if (args.length == 3) {
+            domain = args[2];
+        }
+        
+        SocrataCatalog catalog = new SocrataCatalog(outputFile);
+        try {
+            if (domain != null) {
+                catalog.download(domain, type);
+            } else {
+                catalog.download(type);
+            }
+        } catch (java.net.URISyntaxException | java.io.IOException ex) {
+            LOGGER.log(Level.SEVERE, "RUN", ex);
+        }
     }
 }
