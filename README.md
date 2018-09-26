@@ -55,7 +55,7 @@ For example, specifying resource type **dataset** will download a list of all da
 
 There are various ways to download the actual datasets from the Socrata API. One way is to (1) get the value of the permalink element in the catalog entry for a resource, (2) extract the base Url and the dataset identifier (e.g., for [https://data.ny.gov/d/kwxv-fwze](https://data.ny.gov/d/kwxv-fwze) the base Url is https://data.ny.gov/ and the resource identifier is kwxv-fwze), and (3) generate a download Url as *baseUrl*/api/views/*identifier*/*downloadFormat* (e.g., [https://data.ny.gov/api/views/kwxv-fwze/rows.json?accessType=DOWNLOAD](https://data.ny.gov/api/views/kwxv-fwze/rows.json?accessType=DOWNLOAD)). By using `rows.json`, `rows.csv`, or `rows.tsv` the data can be doanloaded in different formats.
 
-The data format that is used by the Socrata GUI for publishing the data differs from to the download data (i.e., tuples are structured Json objects instead of arrays of tuple values). Access to this format, however, is a bit more complicated. The JAR file 'SocrataDatasets.jar' is intended to allow downloading datasets in the *advanced Json format*.
+The data format that is used by the Socrata GUI for publishing the data differs from to the download data (i.e., tuples are structured Json objects instead of arrays of tuple values). The data is easier to parse but a bit more complicated to get. The JAR file 'SocrataDatasets.jar' is intended to allow downloading datasets in the *advanced Json format*.
 
 ```
 java -jar SocrataDatasets.jar
