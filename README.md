@@ -1,7 +1,7 @@
 Urban Data Integration - Data Provider
 ======================================
 
-This Java library is part of the **Urban Data Integeration** project. It provides functionality to download and transform (open urban) data sets from different data provider.
+This Java library is part of the **Urban Data Integration** project. It provides functionality to download and transform (open urban) data sets from different data provider.
 
 
 Data Provider - Socrata
