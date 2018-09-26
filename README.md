@@ -7,7 +7,7 @@ This Java library is part of the **Urban Data Integeration** project. It provide
 Data Provider - Socrata
 -----------------------
 
-For Socrata the library uses the [Discovery API](https://socratadiscovery.docs.apiary.io/). There are three tools included in the repository:
+For Socrata the library uses the [Discovery API](https://socratadiscovery.docs.apiary.io/). There are [three tools included in the repository](https://github.com/ViDA-NYU/urban-data-provider/tree/master/lib):
 
 
 ### List Socrata Domain
