@@ -12,7 +12,7 @@ For Socrata the library uses the [Discovery API](https://socratadiscovery.docs.a
 
 ### List Socrata Domain
 
-The `SocrataDomains.jar` JAR file lists the names (and number of available resources) for each domain available from the Socrata API.
+The `SocrataDomains.jar` JAR file lists the names (and number of resources) for each domain that is hosted by the Socrata API.
 
 ``` 
 java -jar SocrataDomains.jar
