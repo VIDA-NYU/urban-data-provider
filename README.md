@@ -66,3 +66,15 @@ java -jar SocrataDatasets.jar
   <dataset-file>     : Output file that will contain identifier and name of downloaded datasets
   <output-directory> : Output directory for downloaded Json files
 ```
+
+
+### Convert Data in TSV format
+
+The JAR file `Dataset2TSVConverter.jar` converts downloaded datasets in Json format into tab-delimited CSV files.
+
+```
+java -jar Dataset2TSVConverter.jar
+  <input-dir>  : Input directory containing downloaded Json files
+  <threads>    : Number of parallel threads to use
+  <output-dir> : Output directory for TSV files
+```
