@@ -39,7 +39,7 @@
                    <archive>
                       <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.urban.data.provider.socrata.SocrataCatalog</mainClass>
+                            <mainClass>org.urban.data.provider.socrata.SocrataDatasets</mainClass>
                       </manifest>
                    </archive>
                 </configuration>

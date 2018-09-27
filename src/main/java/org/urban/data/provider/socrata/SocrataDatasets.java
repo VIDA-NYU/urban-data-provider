@@ -58,7 +58,7 @@ public class SocrataDatasets {
     
     private static final Logger LOGGER = Logger.getGlobal();
     
-    public static final String VERSION = "0.1.0";
+    public static final String VERSION = "0.1.1";
     
     private class DatasetDownloadTask implements Runnable {
         
@@ -102,26 +102,6 @@ public class SocrataDatasets {
     }
     
     public void run(
-            String domain,
-            boolean overwrite,
-            int threads,
-            File datasetFile,
-            File outputDir
-    ) throws java.io.IOException, java.lang.InterruptedException, java.net.URISyntaxException {
-
-        // Start by downloading the catalog information for the given domain.
-        // The catalog is written to a temporary file.
-        File tmpCatalog = null;
-        tmpCatalog = File.createTempFile("catalog.", ".json");
-        new SocrataCatalog(tmpCatalog).download(domain, "dataset");
-
-        this.run(tmpCatalog, domain, overwrite, threads, datasetFile, outputDir);
-        
-        // Delete the temporary catalog file
-        tmpCatalog.delete();
-    }
-    
-    public void run(
             File catalogFile,
             String domain,
             boolean overwrite,
@@ -155,6 +135,11 @@ public class SocrataDatasets {
 		}
 	    }
 	}
+        
+        // Download catalog if file does not exists
+        if (!catalogFile.exists()) {
+            new SocrataCatalog(catalogFile).download(domain, "dataset");
+        }
         
         // Query catalog to get dataset identifier and permalink information
         ArrayList<JQuery> select = new ArrayList<>();
