@@ -74,7 +74,7 @@ public class SocrataCatalog {
     
     private static final Logger LOGGER = Logger.getGlobal();
     
-    public static final String VERSION = "0.1.0";
+    public static final String VERSION = "0.2.0";
 
     /**
      * Base URL for Socrata dataset catalog. Results are limited to a maximum
@@ -116,10 +116,9 @@ public class SocrataCatalog {
      * Download catalog for all resources of given type.
      * 
      * @param type
-     * @throws java.net.URISyntaxException
      * @throws java.io.IOException 
      */
-    public void download(String type)  throws java.net.URISyntaxException, java.io.IOException {
+    public void download(String type)  throws java.io.IOException {
         
         List<SocrataDomain> domains = SocrataCatalog.listDomains();
         
@@ -128,8 +127,11 @@ public class SocrataCatalog {
         ) {
             out.beginArray();
             for (SocrataDomain domain : domains) {
-                System.out.println(domain.name());
-                this.downloadAndWriteResources(domain.name(), type, out);
+                try {
+                    this.downloadAndWriteResources(domain.name(), type, out);
+                } catch (java.net.URISyntaxException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
             out.endArray();
         }
@@ -167,6 +169,8 @@ public class SocrataCatalog {
         
         HttpClient client = HttpClientBuilder.create().build();
 
+        int resourceCount = 0;
+        
         Gson gson = new Gson();
         for (String[] api : URLS) {
             String scrollId = null;
@@ -184,7 +188,6 @@ public class SocrataCatalog {
                 if (scrollId != null) {
                     uri.setParameter("&scroll_id=", scrollId);
                 }
-                System.out.println(uri.toString());
                 HttpGet request = new HttpGet(uri.build());
                 request.addHeader("X-App-Token", APP_TOKEN);
                 HttpResponse response = client.execute(request);
@@ -220,25 +223,21 @@ public class SocrataCatalog {
                     }
                 }
             }
-            if (entryCount > 0) {
-                if (entryCount != resultSetSize) {
-                    System.out.println("Got only " + entryCount + " entries of " + resultSetSize);
-                } else {
-                    System.out.println("Read " + entryCount + " entries");
-                    break;
-                }
+            resourceCount += entryCount;
+            if (entryCount == resultSetSize) {
+                break;
             }
         }
+        System.out.println(domain + "\t" + resourceCount);
     }
     
     /**
      * Get a list of all domains that are available at the Socrata API.
      * 
      * @return
-     * @throws java.net.URISyntaxException 
      * @throws java.io.IOException 
      */
-    public static List<SocrataDomain> listDomains() throws  java.net.URISyntaxException, java.io.IOException {
+    public static List<SocrataDomain> listDomains() throws  java.io.IOException {
         
         List<SocrataDomain> result = new ArrayList<>();
         
@@ -249,7 +248,12 @@ public class SocrataCatalog {
                 .setScheme("http")
                 .setHost(api[0])
                 .setPath(api[1] + "/domains");
-            HttpGet request = new HttpGet(uri.build());
+            HttpGet request;
+            try {
+                request = new HttpGet(uri.build());
+            } catch (java.net.URISyntaxException ex) {
+              throw new RuntimeException(ex);      
+            }
             request.addHeader("X-App-Token", APP_TOKEN);
             HttpResponse response = client.execute(request);
             try (JsonReader reader = new JsonReader(
@@ -262,10 +266,10 @@ public class SocrataCatalog {
                         reader.beginArray();
                         while (reader.hasNext()) {
                             JsonObject doc = new JsonParser().parse(reader).getAsJsonObject();
-                            if ((doc.has("thing")) && (doc.has("count"))) {
+                            if ((doc.has("domain")) && (doc.has("count"))) {
                                 result.add(
                                         new SocrataDomain(
-                                                doc.get("thing").getAsString(),
+                                                doc.get("domain").getAsString(),
                                                 doc.get("count").getAsInt()
                                         )
                                 );
@@ -318,7 +322,7 @@ public class SocrataCatalog {
     
     public List<String[]> query(List<JQuery> select) throws java.io.IOException {
         
-        return this.query(select, new ArrayList<JFilter>());
+        return this.query(select, new ArrayList<>());
     }
     
     public static void main(String[] args) {

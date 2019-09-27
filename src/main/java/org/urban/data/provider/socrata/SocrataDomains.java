@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 New York University.
+ * Copyright 2019 New York University.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class SocrataDomains {
                 out.println(domain.name() + "\t" + domain.count());
             }
             out.close();
-        } catch (java.net.URISyntaxException | java.io.IOException ex) {
+        } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);
         }
