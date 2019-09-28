@@ -175,7 +175,7 @@ public class UpdatedDatasetDownloader {
         String dateKey = DF.format(today);
         
         // Configure the log file
-        File logFile = FileSystem.joinPath(outputDir, "log");
+        File logFile = FileSystem.joinPath(outputDir, "logs");
         logFile = FileSystem.joinPath(logFile, dateKey + ".log");
         FileSystem.createParentFolder(logFile);
         FileHandler fh = new FileHandler(logFile.getAbsolutePath());
