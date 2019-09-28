@@ -30,8 +30,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.io.SynchronizedWriter;
 import org.urban.data.core.query.json.JQuery;
@@ -52,7 +54,8 @@ public class UpdatedDatasetDownloader {
     
     private static final String DBFILE_NAME = "db.tsv";
     private static final SimpleDateFormat DF = new SimpleDateFormat("yyyyMMdd");
-    private static final Logger LOGGER = Logger.getGlobal();
+    private static final Logger LOGGER = Logger
+            .getLogger(UpdatedDatasetDownloader.class.getName());
     
     private class DownloadTask implements Runnable {
 
@@ -117,9 +120,10 @@ public class UpdatedDatasetDownloader {
                         this.download(outputFile, url);
                         _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\tS");
                     } catch (java.io.IOException ex) {
-                        Logger.getGlobal().log(Level.SEVERE, url, ex);
+                        LOGGER.log(Level.SEVERE, url, ex);
                         _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\tS");
                     }
+                    _writer.flush();
                 } else {
                     LOGGER.log(Level.WARNING, permalink);
                 }
@@ -170,6 +174,15 @@ public class UpdatedDatasetDownloader {
         Date today = new Date();
         String dateKey = DF.format(today);
         
+        // Configure the log file
+        File logFile = FileSystem.joinPath(outputDir, "log");
+        logFile = FileSystem.joinPath(logFile, dateKey + ".log");
+        FileSystem.createParentFolder(logFile);
+        FileHandler fh = new FileHandler(logFile.getAbsolutePath());
+        fh.setFormatter(new SimpleFormatter());
+        LOGGER.addHandler(fh);
+        LOGGER.setLevel(Level.INFO);
+        
         // Read the database file containing information about previously
         // downloaded files
         File dbFile = FileSystem.joinPath(outputDir, DBFILE_NAME);
@@ -218,6 +231,7 @@ public class UpdatedDatasetDownloader {
             }
         }
         
+        LOGGER.log(Level.INFO, "DOWNLOAD {0} FILES", downloads.size());
         LOGGER.log(Level.INFO, "START {0}", new Date());
         
         // Download all updated datasets
@@ -256,7 +270,7 @@ public class UpdatedDatasetDownloader {
         try {
             new UpdatedDatasetDownloader().run(threads, outputDir);
         } catch (java.io.IOException ex) {
-            Logger.getGlobal().log(Level.SEVERE, "RUN", ex);
+            LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);
         }
     }
