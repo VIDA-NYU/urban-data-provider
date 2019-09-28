@@ -34,6 +34,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import org.apache.commons.io.IOUtils;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.io.SynchronizedWriter;
 import org.urban.data.core.query.json.JQuery;
@@ -80,25 +81,14 @@ public class UpdatedDatasetDownloader {
         private void download(File outputFile, String url) throws java.io.IOException {
 
             FileSystem.createParentFolder(outputFile);
-
-            InputStream in = null;
-            OutputStream out = null;
-
-            try {
-                in = new URL(url).openStream();
-                out = FileSystem.openOutputFile(outputFile);
-                int c;
-                while ((c = in.read()) != -1) {
-                    out.write(c);
+            if (!outputFile.exists()) {
+                try (
+                        InputStream in = new URL(url).openStream();
+                        OutputStream out = FileSystem.openOutputFile(outputFile)
+                ) {
+                    IOUtils.copy(in, out);
                 }
-            } finally {
-                if (in != null) {
-                    in.close();
-                }
-                if (out != null) {
-                    out.close();
-                }
-            }
+            }            
         }
 
         @Override
