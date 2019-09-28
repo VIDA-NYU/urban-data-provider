@@ -15,10 +15,10 @@
  */
 package org.urban.data.provider.socrata;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -85,7 +85,7 @@ public class UpdatedDatasetDownloader {
             if (!outputFile.exists()) {
                 try (
                         InputStream in = new URL(url).openStream();
-                        BufferedOutputStream out = new BufferedOutputStream(FileSystem.openOutputFile(outputFile))
+                        OutputStream out = FileSystem.openOutputFile(outputFile)
                 ) {
                     IOUtils.copy(in, out);
                 }
