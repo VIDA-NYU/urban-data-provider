@@ -19,7 +19,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -82,6 +81,7 @@ public class UpdatedDatasetDownloader {
         private void download(File outputFile, String url) throws java.io.IOException {
 
             FileSystem.createParentFolder(outputFile);
+            
             if (!outputFile.exists()) {
                 try (
                         InputStream in = new URL(url).openStream();
@@ -159,11 +159,7 @@ public class UpdatedDatasetDownloader {
         return db;
     }
     
-    public void run(int threads, File outputDir) throws java.io.IOException {
-        
-        // Get the current date and the date key
-        Date today = new Date();
-        String dateKey = DF.format(today);
+    public void run(String dateKey, int threads, File outputDir) throws java.io.IOException {
         
         // Configure the log file
         File logFile = FileSystem.joinPath(outputDir, "logs");
@@ -245,21 +241,28 @@ public class UpdatedDatasetDownloader {
     
     private static final String COMMAND = 
             "Usage:\n" +
+            "  <output-directory>\n" +
             "  <threads>\n" +
-            "  <output-directory>";
+            "  {<date>}";
 
     public static void main(String[] args) {
     
-        if (args.length != 2) {
+        if ((args.length < 2) || (args.length > 3)) {
             System.out.println(COMMAND);
             System.exit(-1);
         }
         
-        int threads = Integer.parseInt(args[0]);
-        File outputDir = new File(args[1]);
+        File outputDir = new File(args[0]);
+        int threads = Integer.parseInt(args[1]);
+        String dateKey;
+        if (args.length == 3) {
+            dateKey = args[2];
+        } else {
+            dateKey = DF.format(new Date());
+        }
         
         try {
-            new UpdatedDatasetDownloader().run(threads, outputDir);
+            new UpdatedDatasetDownloader().run(dateKey, threads, outputDir);
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);
