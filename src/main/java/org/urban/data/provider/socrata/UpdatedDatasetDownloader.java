@@ -26,9 +26,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.io.FileSystem;
+import org.urban.data.core.io.SynchronizedWriter;
 import org.urban.data.core.query.json.JQuery;
 
 /**
@@ -45,33 +50,82 @@ import org.urban.data.core.query.json.JQuery;
  */
 public class UpdatedDatasetDownloader {
     
-    private static final String COMMAND =  "Usage: <output-directory";
     private static final String DBFILE_NAME = "db.tsv";
     private static final SimpleDateFormat DF = new SimpleDateFormat("yyyyMMdd");
     private static final Logger LOGGER = Logger.getGlobal();
     
-    private void download(File outputFile, String url) throws java.io.IOException {
+    private class DownloadTask implements Runnable {
+
+        private final ConcurrentLinkedQueue<String[]> _datasets;
+        private final String _dateKey;
+        private final File _outputDir;
+        private final SynchronizedWriter _writer;
         
-        FileSystem.createParentFolder(outputFile);
+        public DownloadTask(
+                ConcurrentLinkedQueue<String[]> datasets,
+                String dateKey,
+                File outputDir,
+                SynchronizedWriter writer
+        ) {
         
-        InputStream in = null;
-        OutputStream out = null;
+            _datasets = datasets;
+            _dateKey = dateKey;
+            _outputDir = outputDir;
+            _writer = writer;
+        }
         
-        try {
-            in = new URL(url).openStream();
-            out = FileSystem.openOutputFile(outputFile);
-            int c;
-            while ((c = in.read()) != -1) {
-                out.write(c);
-            }
-        } finally {
-            if (in != null) {
-                in.close();
-            }
-            if (out != null) {
-                out.close();
+        private void download(File outputFile, String url) throws java.io.IOException {
+
+            FileSystem.createParentFolder(outputFile);
+
+            InputStream in = null;
+            OutputStream out = null;
+
+            try {
+                in = new URL(url).openStream();
+                out = FileSystem.openOutputFile(outputFile);
+                int c;
+                while ((c = in.read()) != -1) {
+                    out.write(c);
+                }
+            } finally {
+                if (in != null) {
+                    in.close();
+                }
+                if (out != null) {
+                    out.close();
+                }
             }
         }
+
+        @Override
+        public void run() {
+
+            String[] tuple;
+            while ((tuple = _datasets.poll()) != null) {
+                String domain = tuple[0];
+                String dataset = tuple[1];
+                String permalink = tuple[3];
+                if (permalink.contains("/d/")) {
+                    String url = permalink.replace("/d/", "/api/views/");
+                    url += "/rows.tsv?accessType=DOWNLOAD";
+                    LOGGER.log(Level.INFO, url);
+                    try {
+                        File dir = FileSystem.joinPath(_outputDir, domain);
+                        dir = FileSystem.joinPath(dir, _dateKey);
+                        File outputFile = FileSystem.joinPath(dir, dataset + ".tsv.gz");
+                        this.download(outputFile, url);
+                        _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\tS");
+                    } catch (java.io.IOException ex) {
+                        Logger.getGlobal().log(Level.SEVERE, url, ex);
+                        _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\tS");
+                    }
+                } else {
+                    LOGGER.log(Level.WARNING, permalink);
+                }
+            }
+        }
+        
     }
 
     /**
@@ -110,7 +164,7 @@ public class UpdatedDatasetDownloader {
         return db;
     }
     
-    public void run(File outputDir) throws java.io.IOException {
+    public void run(int threads, File outputDir) throws java.io.IOException {
         
         // Get the current date and the date key
         Date today = new Date();
@@ -136,7 +190,8 @@ public class UpdatedDatasetDownloader {
         select.add(new JQuery("/resource/id"));
         select.add(new JQuery("/resource/data_updated_at"));
         select.add(new JQuery("/permalink"));
-        List<String[]> downloads = new ArrayList<>();
+        
+        ConcurrentLinkedQueue<String[]> downloads = new ConcurrentLinkedQueue<>();
         for (String[] tuple : new CatalogQuery(catalogFile).eval(select, true)) {
             String domain = tuple[0];
             String dataset = tuple[1];
@@ -167,44 +222,39 @@ public class UpdatedDatasetDownloader {
         
         // Download all updated datasets
         try (PrintWriter out = FileSystem.openPrintWriter(dbFile, true)) {
-            for (String[] tuple : downloads) {
-                String domain = tuple[0];
-                String dataset = tuple[1];
-                String permalink = tuple[3];
-                if (permalink.contains("/d/")) {
-                    String url = permalink.replace("/d/", "/api/views/");
-                    url += "/rows.tsv?accessType=DOWNLOAD";
-                    LOGGER.log(Level.INFO, url);
-                    try {
-                        File dir = FileSystem.joinPath(outputDir, domain);
-                        dir = FileSystem.joinPath(dir, dateKey);
-                        File outputFile = FileSystem.joinPath(dir, dataset + ".tsv.gz");
-                        this.download(outputFile, url);
-                        out.println(domain + "\t" + dataset + "\t" + dateKey + "\tS");
-                    } catch (java.io.IOException ex) {
-                        Logger.getGlobal().log(Level.SEVERE, url, ex);
-                        out.println(domain + "\t" + dataset + "\t" + dateKey + "\tS");
-                    }
-                } else {
-                    LOGGER.log(Level.WARNING, permalink);
-                }
+            SynchronizedWriter writer = new SynchronizedWriter(out);
+            ExecutorService es = Executors.newCachedThreadPool();
+            for (int iThread = 0; iThread < threads; iThread++) {
+                es.execute(new DownloadTask(downloads, dateKey, outputDir, writer));
+            }
+            es.shutdown();
+            try {
+                es.awaitTermination(7, TimeUnit.DAYS);
+            } catch (java.lang.InterruptedException ex) {
+                throw new RuntimeException(ex);
             }
         }
 
         LOGGER.log(Level.INFO, "DONE {0}", new Date());
     }
     
+    private static final String COMMAND = 
+            "Usage:\n" +
+            "  <threads>\n" +
+            "  <output-directory>";
+
     public static void main(String[] args) {
     
-        if (args.length != 1) {
+        if (args.length != 2) {
             System.out.println(COMMAND);
             System.exit(-1);
         }
         
-        File outputDir = new File(args[0]);
+        int threads = Integer.parseInt(args[0]);
+        File outputDir = new File(args[1]);
         
         try {
-            new UpdatedDatasetDownloader().run(outputDir);
+            new UpdatedDatasetDownloader().run(threads, outputDir);
         } catch (java.io.IOException ex) {
             Logger.getGlobal().log(Level.SEVERE, "RUN", ex);
             System.exit(-1);
