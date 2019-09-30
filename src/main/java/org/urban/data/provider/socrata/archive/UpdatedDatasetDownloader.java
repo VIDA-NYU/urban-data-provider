@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata;
+package org.urban.data.provider.socrata.archive;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -38,6 +36,8 @@ import org.apache.commons.io.IOUtils;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.io.SynchronizedWriter;
 import org.urban.data.core.query.json.JQuery;
+import org.urban.data.provider.socrata.CatalogQuery;
+import org.urban.data.provider.socrata.SocrataCatalog;
 
 /**
  * Download all datasets from the Socrata API that have been modified since the
@@ -53,8 +53,6 @@ import org.urban.data.core.query.json.JQuery;
  */
 public class UpdatedDatasetDownloader {
     
-    private static final String DBFILE_NAME = "db.tsv";
-    private static final SimpleDateFormat DF = new SimpleDateFormat("yyyyMMdd");
     private static final Logger LOGGER = Logger
             .getLogger(UpdatedDatasetDownloader.class.getName());
     
@@ -123,42 +121,6 @@ public class UpdatedDatasetDownloader {
         
     }
 
-    /**
-     * Read database file. the file is expected to be in sequential order such
-     * that each file entries overrides previous entries for the same dataset.
-     * 
-     * @param file
-     * @return
-     * @throws java.text.ParseException
-     * @throws java.io.IOException 
-     */
-    private HashMap<String, HashMap<String, Date>> readDatabase(File file) throws java.io.IOException {
-        
-        HashMap<String, HashMap<String, Date>> db = new HashMap<>();
-        
-        if (file.exists()) {
-            try (BufferedReader in = FileSystem.openReader(file)) {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    String[] tokens = line.split("\t");
-                    String domain = tokens[0];
-                    String dataset = tokens[1];
-                    try {
-                        Date date = DF.parse(tokens[2]);
-                        if (!db.containsKey(domain)) {
-                            db.put(domain, new HashMap<>());
-                        }
-                        db.get(domain).put(dataset, date);
-                    } catch (java.text.ParseException ex) {
-                        LOGGER.log(Level.WARNING, tokens[2], ex);
-                   }
-                }
-            }
-        }
-        
-        return db;
-    }
-    
     public void run(String dateKey, int threads, File outputDir) throws java.io.IOException {
         
         // Configure the log file
@@ -172,8 +134,8 @@ public class UpdatedDatasetDownloader {
         
         // Read the database file containing information about previously
         // downloaded files
-        File dbFile = FileSystem.joinPath(outputDir, DBFILE_NAME);
-        HashMap<String, HashMap<String, Date>> db = this.readDatabase(dbFile);
+        DB db = new DB(outputDir);
+        HashMap<String, HashMap<String, Dataset>> datasets = db.readIndex();
         
         // Download the current Socrata catalog
         String catalogName = "catalog." + dateKey + ".json.gz";
@@ -196,9 +158,9 @@ public class UpdatedDatasetDownloader {
             String domain = tuple[0];
             String dataset = tuple[1];
             Date lastDownload = null;
-            if (db.containsKey(domain)) {
-                if (db.get(domain).containsKey(dataset)) {
-                    lastDownload = db.get(domain).get(dataset);
+            if (datasets.containsKey(domain)) {
+                if (datasets.get(domain).containsKey(dataset)) {
+                    lastDownload = datasets.get(domain).get(dataset).getDate();
                 }
             }
             Date lastUpdate;
@@ -206,7 +168,7 @@ public class UpdatedDatasetDownloader {
                 String dt = tuple[2]
                         .substring(0, tuple[2].indexOf("T"))
                         .replaceAll("-", "");
-                lastUpdate = DF.parse(dt);
+                lastUpdate = DB.DF.parse(dt);
             } catch (java.text.ParseException ex) {
                 LOGGER.log(Level.WARNING, tuple[2], ex);
                 continue;
@@ -222,7 +184,7 @@ public class UpdatedDatasetDownloader {
         LOGGER.log(Level.INFO, "START {0}", new Date());
         
         // Download all updated datasets
-        try (PrintWriter out = FileSystem.openPrintWriter(dbFile, true)) {
+        try (PrintWriter out = FileSystem.openPrintWriter(db.databaseFile(), true)) {
             SynchronizedWriter writer = new SynchronizedWriter(out);
             ExecutorService es = Executors.newCachedThreadPool();
             for (int iThread = 0; iThread < threads; iThread++) {
@@ -258,7 +220,7 @@ public class UpdatedDatasetDownloader {
         if (args.length == 3) {
             dateKey = args[2];
         } else {
-            dateKey = DF.format(new Date());
+            dateKey = DB.DF.format(new Date());
         }
         
         try {
