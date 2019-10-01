@@ -27,14 +27,26 @@ public class Dataset {
     private final String _domain;
     private final String _downloadDate;
     private final String _identifier;
+    private final boolean _success;
     
-    public Dataset(String identifier, String domain, String date) {
+    public Dataset(String identifier, String domain, String date, boolean success) {
         
         _identifier = identifier;
         _domain = domain;
         _downloadDate = date;
+        _success = success;
     }
     
+    public Dataset(String identifier, String domain, String date, String success) {
+        
+        this(identifier, domain, date, success.equals(DB.DOWNLOAD_SUCCESS));
+    }
+
+    public Dataset(String identifier, String domain, String date) {
+        
+        this(identifier, domain, date, true);
+    }
+
     public String domain() {
         
         return _domain;
@@ -57,5 +69,10 @@ public class Dataset {
     public String identifier() {
         
         return _identifier;
+    }
+    
+    public boolean successfulDownload() {
+        
+        return _success;
     }
 }

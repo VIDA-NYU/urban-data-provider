@@ -35,16 +35,24 @@ import org.urban.data.core.io.SynchronizedWriter;
  * Parse downloaded TSV files to ensure that all rows have the right number of
  * columns. Report any files that cannot be parsed correctly.
  * 
+ * For each dataset the number of columns, total rows, and the number of
+ * successfully parsed rows are reported. If all three values are -1 the dataset
+ * file failed to pare at all. The output is tab-delimited with the following
+ * columns:
+ * 
+ * 1) domain
+ * 2) dataset identifier
+ * 3) download date
+ * 4) number of columns
+ * 5) total number of rows
+ * 6) number of successful parsed rows
+ * 
  * Expects a given date key as argument. Will parse all downloaded files for
  * the given date.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class ValidateTSVFiles {
-
-    private static SynchronizedWriter SynchronizedWriter(PrintWriter out) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+public class DatasetStatsWriter {
 
     private class DatasetParser implements Runnable {
 
@@ -120,7 +128,7 @@ public class ValidateTSVFiles {
     }
     
     private static final Logger LOGGER = Logger
-            .getLogger(ValidateTSVFiles.class.getName());
+            .getLogger(DatasetStatsWriter.class.getName());
     
     public void run(
             DB db,
@@ -178,7 +186,7 @@ public class ValidateTSVFiles {
                 printToStdOut = false;
             }
             try (SynchronizedWriter writer = new SynchronizedWriter(out)) {
-                new ValidateTSVFiles().run(
+                new DatasetStatsWriter().run(
                         new DB(baseDir),
                         date, threads,
                         writer,

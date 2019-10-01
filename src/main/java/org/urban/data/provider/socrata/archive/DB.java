@@ -17,11 +17,14 @@ package org.urban.data.provider.socrata.archive;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.urban.data.core.io.FileSystem;
 
 /**
@@ -35,13 +38,19 @@ public class DB {
     // Date format for download dates in the database file
     public static final SimpleDateFormat DF = new SimpleDateFormat("yyyyMMdd");
 
-    private static final Logger LOGGER = Logger.getLogger(DB.class.getName());
-
+    public static final String DOWNLOAD_FAILED = "F";
+    public static final String DOWNLOAD_SUCCESS = "S";
+    
     private final File _baseDir;
     
     public DB(File baseDir) {
         
         _baseDir = baseDir;
+    }
+    
+    public File catalogFile(String date) {
+        
+        return FileSystem.joinPath(_baseDir, "catalog." + date + ".json.gz");
     }
     
     /**
@@ -67,7 +76,6 @@ public class DB {
         return FileSystem.joinPath(file, dataset.identifier() + ".tsv.gz");
     }
     
-
     /**
      * Read database file for a given date. Returns entries that were downloaded
      * at the given date.
@@ -90,7 +98,7 @@ public class DB {
                     String domain = tokens[0];
                     String dataset = tokens[1];
                     if (tokens[2].equals(date)) {
-                        db.add(new Dataset(dataset, domain, date));
+                        db.add(new Dataset(dataset, domain, date, tokens[3]));
                     }
                 }
             }
@@ -110,6 +118,12 @@ public class DB {
         }
         
         return result;
+    }
+    
+    public CSVParser open(Dataset dataset) throws java.io.IOException {
+        
+        InputStream is = FileSystem.openFile(this.datasetFile(dataset));
+        return new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
     }
     
     /**
@@ -136,7 +150,7 @@ public class DB {
                     }
                     db.get(domain).put(
                             dataset,
-                            new Dataset(dataset, domain, tokens[2])
+                            new Dataset(dataset, domain, tokens[2], tokens[3])
                     );
                 }
             }
@@ -171,7 +185,7 @@ public class DB {
                         }
                         db.get(domain).put(
                                 dataset,
-                                new Dataset(dataset, domain, downloadDate)
+                                new Dataset(dataset, domain, downloadDate, tokens[3])
                         );
                     }
                 }

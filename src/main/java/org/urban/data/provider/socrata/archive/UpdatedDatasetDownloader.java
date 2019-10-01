@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +35,9 @@ import org.apache.commons.io.IOUtils;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.io.SynchronizedWriter;
 import org.urban.data.core.query.json.JQuery;
-import org.urban.data.provider.socrata.CatalogQuery;
+import org.urban.data.core.query.json.JsonQuery;
+import org.urban.data.core.query.json.ResultTuple;
+import org.urban.data.core.query.json.SelectClause;
 import org.urban.data.provider.socrata.SocrataCatalog;
 
 /**
@@ -58,13 +59,13 @@ public class UpdatedDatasetDownloader {
     
     private class DownloadTask implements Runnable {
 
-        private final ConcurrentLinkedQueue<String[]> _datasets;
+        private final ConcurrentLinkedQueue<ResultTuple> _datasets;
         private final String _dateKey;
         private final File _outputDir;
         private final SynchronizedWriter _writer;
         
         public DownloadTask(
-                ConcurrentLinkedQueue<String[]> datasets,
+                ConcurrentLinkedQueue<ResultTuple> datasets,
                 String dateKey,
                 File outputDir,
                 SynchronizedWriter writer
@@ -93,25 +94,27 @@ public class UpdatedDatasetDownloader {
         @Override
         public void run() {
 
-            String[] tuple;
+            ResultTuple tuple;
             while ((tuple = _datasets.poll()) != null) {
-                String domain = tuple[0];
-                String dataset = tuple[1];
-                String permalink = tuple[3];
+                String domain = tuple.get("domain");
+                String dataset = tuple.get("dataset");
+                String permalink = tuple.get("link");
                 if (permalink.contains("/d/")) {
                     String url = permalink.replace("/d/", "/api/views/");
                     url += "/rows.tsv?accessType=DOWNLOAD";
                     LOGGER.log(Level.INFO, url);
+                    String state;
                     try {
                         File dir = FileSystem.joinPath(_outputDir, domain);
                         dir = FileSystem.joinPath(dir, _dateKey);
                         File outputFile = FileSystem.joinPath(dir, dataset + ".tsv.gz");
                         this.download(outputFile, url);
-                        _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\tS");
+                        state = DB.DOWNLOAD_SUCCESS;
                     } catch (java.io.IOException ex) {
                         LOGGER.log(Level.SEVERE, url, ex);
-                        _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\tS");
+                        state = DB.DOWNLOAD_FAILED;
                     }
+                    _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\t" + state);
                     _writer.flush();
                 } else {
                     LOGGER.log(Level.WARNING, permalink);
@@ -138,8 +141,7 @@ public class UpdatedDatasetDownloader {
         HashMap<String, HashMap<String, Dataset>> datasets = db.readIndex();
         
         // Download the current Socrata catalog
-        String catalogName = "catalog." + dateKey + ".json.gz";
-        File catalogFile = FileSystem.joinPath(outputDir, catalogName);
+        File catalogFile = db.catalogFile(dateKey);
         if (!catalogFile.exists()) {
             new SocrataCatalog(catalogFile).download("dataset");
         }
@@ -147,30 +149,35 @@ public class UpdatedDatasetDownloader {
         // Query the catalog to get all datasets and their last modification
         // date. Compiles a list of tuples for datasets that need to be
         // downloaded.
-        List<JQuery> select = new ArrayList<>();
-        select.add(new JQuery("/metadata/domain"));
-        select.add(new JQuery("/resource/id"));
-        select.add(new JQuery("/resource/data_updated_at"));
-        select.add(new JQuery("/permalink"));
+        SelectClause select = new SelectClause()
+                .add("domain", new JQuery("/metadata/domain"))
+                .add("dataset", new JQuery("/resource/id"))
+                .add("updatedAt", new JQuery("/resource/data_updated_at"))
+                .add("link", new JQuery("/permalink"));
         
-        ConcurrentLinkedQueue<String[]> downloads = new ConcurrentLinkedQueue<>();
-        for (String[] tuple : new CatalogQuery(catalogFile).eval(select, true)) {
-            String domain = tuple[0];
-            String dataset = tuple[1];
+        ConcurrentLinkedQueue<ResultTuple> downloads = new ConcurrentLinkedQueue<>();
+        
+        List<ResultTuple> rs =  new JsonQuery(catalogFile).executeQuery(select, true);
+        for (ResultTuple tuple : rs) {
+            String domain = tuple.get("domain");
+            String dataset = tuple.get("dataset");
             Date lastDownload = null;
             if (datasets.containsKey(domain)) {
                 if (datasets.get(domain).containsKey(dataset)) {
-                    lastDownload = datasets.get(domain).get(dataset).getDate();
+                    Dataset ds = datasets.get(domain).get(dataset);
+                    if (ds.successfulDownload()) {
+                        lastDownload = ds.getDate();
+                    }
                 }
             }
             Date lastUpdate;
             try {
-                String dt = tuple[2]
-                        .substring(0, tuple[2].indexOf("T"))
+                String dt = tuple.get("updatedAt")
+                        .substring(0, tuple.get("updatedAt").indexOf("T"))
                         .replaceAll("-", "");
                 lastUpdate = DB.DF.parse(dt);
             } catch (java.text.ParseException ex) {
-                LOGGER.log(Level.WARNING, tuple[2], ex);
+                LOGGER.log(Level.WARNING, tuple.get("updatedAt"), ex);
                 continue;
             }
             if (lastDownload == null) {
