@@ -71,6 +71,11 @@ public class Dataset {
         return _identifier;
     }
     
+    public String key() {
+        
+        return _domain + "#" + _identifier + "#" + _downloadDate;
+    }
+    
     public boolean successfulDownload() {
         
         return _success;

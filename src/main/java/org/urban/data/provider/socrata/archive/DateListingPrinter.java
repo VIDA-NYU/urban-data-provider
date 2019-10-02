@@ -15,51 +15,46 @@
  */
 package org.urban.data.provider.socrata.archive;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import org.urban.data.provider.socrata.cli.Args;
-import java.io.IOException;
 import org.urban.data.provider.socrata.cli.Command;
 import org.urban.data.provider.socrata.cli.Help;
 
 /**
- * Create load file for a given dataset.
+ * Print download dates and number of files. Prints a listing of all dates on
+ * which datasets have been downloaded together with the number of downloaded
+ * files.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class CreateDatasetLoadfile implements Command {
-   
+public class DateListingPrinter implements Command {
+
+
     @Override
     public void help() {
 
-        Help.printName(this.name(), "Create load file and statement for dataset");
+        Help.printName(this.name(), "Download dates");
         Help.printDir();
-        Help.printDomain();
-        Help.printDataset();
-        Help.printDate("Download date (default: today)");
     }
 
     @Override
     public String name() {
 
-        return "load";
+        return "dates";
     }
-   
-    @Override
-    public void run(Args args) throws IOException {
 
-        if (!args.hasDataset()) {
-            throw new IllegalArgumentException("No dataset given");
-        }
-        if (!args.hasDomain()) {
-            throw new IllegalArgumentException("No domain given");
-        }
+    @Override
+    public void run(Args args) throws java.io.IOException {
+
+        HashMap<String, Integer> stats = args.getDB().getDateStats();
         
-        Dataset dataset = new Dataset(
-                args.getDataset(),
-                args.getDomain(),
-                args.getDate()
-        );
+        ArrayList<String> dates = new ArrayList<>(stats.keySet());
+        Collections.sort(dates);
         
-        DatabaseLoader loader = new DatabaseLoader(args.getDB());
-        loader.createLoadFile(dataset, args.getOutput());
+        for (String date : dates) {
+            System.out.println(date + " : " + stats.get(date));
+        }
     }
 }

@@ -30,6 +30,9 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.io.SynchronizedWriter;
+import org.urban.data.provider.socrata.cli.Args;
+import org.urban.data.provider.socrata.cli.Command;
+import org.urban.data.provider.socrata.cli.Help;
 
 /**
  * Parse downloaded TSV files to ensure that all rows have the right number of
@@ -52,7 +55,7 @@ import org.urban.data.core.io.SynchronizedWriter;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DatasetStatsWriter {
+public class DatasetStatsWriter implements Command {
 
     private class DatasetParser implements Runnable {
 
@@ -130,6 +133,23 @@ public class DatasetStatsWriter {
     private static final Logger LOGGER = Logger
             .getLogger(DatasetStatsWriter.class.getName());
     
+
+    @Override
+    public void help() {
+
+        Help.printName(this.name(), "Statistics for downloaded datasets");
+        Help.printDir();
+        Help.printThreads();
+        Help.printDate("Stats for files downloaded on this date (default: today)");
+        Help.printOutput("Output file (default: standard output)");
+    }
+
+    @Override
+    public String name() {
+
+        return "stats";
+    }
+
     public void run(
             DB db,
             String date,
@@ -150,6 +170,29 @@ public class DatasetStatsWriter {
             es.awaitTermination(7, TimeUnit.DAYS);
         } catch (java.lang.InterruptedException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+    
+    @Override
+    public void run(Args args) throws java.io.IOException {
+        
+        PrintWriter out;
+        boolean printToStdOut;
+        if (args.hasOutput()) {
+            out = FileSystem.openPrintWriter(args.getOutput());
+            printToStdOut = true;
+        } else {
+            out = new PrintWriter(System.out);
+            printToStdOut = false;
+        }
+        try (SynchronizedWriter writer = new SynchronizedWriter(out)) {
+            this.run(
+                   args.getDB(),
+                    args.getDate(),
+                    args.getThreads(),
+                    writer,
+                    printToStdOut
+            );
         }
     }
     

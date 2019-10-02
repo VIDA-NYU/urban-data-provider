@@ -19,13 +19,18 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Level;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.urban.data.core.io.FileSystem;
+import org.urban.data.core.util.count.Counter;
 
 /**
  *
@@ -76,6 +81,34 @@ public class DB {
         return FileSystem.joinPath(file, dataset.identifier() + ".tsv.gz");
     }
     
+    public void deleteDatasets(List<Dataset> datasets) throws java.io.IOException {
+        
+        HashSet<String> deleteIndex = new HashSet<>();
+        for (Dataset dataset : datasets) {
+            deleteIndex.add (dataset.key());
+        }
+        
+        List<Dataset> db = new ArrayList<>();
+        
+        for (Dataset dataset : this.listAllDatasets()) {
+            String key = dataset.key();
+            if (deleteIndex.contains(key)) {
+                File file = this.datasetFile(dataset);
+                if (file.exists()) {
+                    file.delete();
+                }
+            } else {
+                db.add(dataset);
+            }
+        }
+        
+        try (PrintWriter out = FileSystem.openPrintWriter(this.databaseFile())) {
+            for (Dataset dataset : db) {
+                DB.write(dataset, out);
+            }
+        }
+    }
+    
     /**
      * Read database file for a given date. Returns entries that were downloaded
      * at the given date.
@@ -107,6 +140,56 @@ public class DB {
         return db;
     }
     
+    public List<String> getDates() {
+    
+        HashSet<String> dates = new HashSet<>();
+        File file = this.databaseFile();
+        if (file.exists()) {
+            try (BufferedReader in = FileSystem.openReader(file)) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    String[] tokens = line.split("\t");
+                    dates.add(tokens[2]);
+                }
+            } catch (java.io.IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        
+        ArrayList<String> result = new ArrayList<>(dates);
+        Collections.sort(result);
+        return result;
+    }
+    
+    public HashMap<String, Integer> getDateStats() {
+    
+        HashMap<String, Counter> stats = new HashMap<>();
+        
+        File file = this.databaseFile();
+        if (file.exists()) {
+            try (BufferedReader in = FileSystem.openReader(file)) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    String[] tokens = line.split("\t");
+                    String date = tokens[2];
+                    if (!stats.containsKey(date)) {
+                        stats.put(date, new Counter(1));
+                    } else {
+                        stats.get(date).inc();
+                    }
+                }
+            } catch (java.io.IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        
+        HashMap<String, Integer> result = new HashMap<>();
+        for (String key : stats.keySet()) {
+            result.put(key, stats.get(key).value());
+        }
+        return result;
+    }
+    
     public List<Dataset> indexToList(HashMap<String, HashMap<String, Dataset>> db) {
         
         List<Dataset> result = new ArrayList<>();
@@ -118,6 +201,26 @@ public class DB {
         }
         
         return result;
+    }
+
+    public List<Dataset> listAllDatasets() throws java.io.IOException {
+        
+        List<Dataset> db = new ArrayList<>();
+        
+        File file = this.databaseFile();
+        if (file.exists()) {
+            try (BufferedReader in = FileSystem.openReader(file)) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    String[] tokens = line.split("\t");
+                    String domain = tokens[0];
+                    String dataset = tokens[1];
+                    db.add(new Dataset(dataset, domain, tokens[2], tokens[3]));
+                }
+            }
+        }
+        
+        return db;
     }
     
     public CSVParser open(Dataset dataset) throws java.io.IOException {
@@ -193,5 +296,21 @@ public class DB {
         }
         
         return db;
+    }
+    
+    public static void write(Dataset dataset, PrintWriter out) {
+        
+        String state;
+        if (dataset.successfulDownload()) {
+            state = DB.DOWNLOAD_SUCCESS;
+        } else {
+            state = DB.DOWNLOAD_FAILED;
+        }
+        out.println(
+                dataset.domain() + "\t" + 
+                dataset.identifier() + "\t" + 
+                dataset.downloadDate() + "\t" + 
+                state
+        );
     }
 }

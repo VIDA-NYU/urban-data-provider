@@ -16,6 +16,7 @@
 package org.urban.data.provider.socrata.archive;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -39,6 +40,9 @@ import org.urban.data.core.query.json.JsonQuery;
 import org.urban.data.core.query.json.ResultTuple;
 import org.urban.data.core.query.json.SelectClause;
 import org.urban.data.provider.socrata.SocrataCatalog;
+import org.urban.data.provider.socrata.cli.Args;
+import org.urban.data.provider.socrata.cli.Command;
+import org.urban.data.provider.socrata.cli.Help;
 
 /**
  * Download all datasets from the Socrata API that have been modified since the
@@ -52,11 +56,11 @@ import org.urban.data.provider.socrata.SocrataCatalog;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class UpdatedDatasetDownloader {
+public class UpdatedDatasetDownloader implements Command {
     
     private static final Logger LOGGER = Logger
             .getLogger(UpdatedDatasetDownloader.class.getName());
-    
+
     private class DownloadTask implements Runnable {
 
         private final ConcurrentLinkedQueue<ResultTuple> _datasets;
@@ -124,11 +128,25 @@ public class UpdatedDatasetDownloader {
         
     }
 
-    public void run(String dateKey, int threads, File outputDir) throws java.io.IOException {
+    @Override
+    public void help() {
+
+        Help.printName(this.name(), "Download datasets that have changed");
+        Help.printDir();
+        Help.printDate("Date for catalog file (default: today)");
+    }
+
+    @Override
+    public String name() {
+
+        return "download";
+    }
+
+    public void run(File databseDir, String date, int threads) throws java.io.IOException {
         
         // Configure the log file
-        File logFile = FileSystem.joinPath(outputDir, "logs");
-        logFile = FileSystem.joinPath(logFile, dateKey + ".log");
+        File logFile = FileSystem.joinPath(databseDir, "logs");
+        logFile = FileSystem.joinPath(logFile, date + ".log");
         FileSystem.createParentFolder(logFile);
         FileHandler fh = new FileHandler(logFile.getAbsolutePath());
         fh.setFormatter(new SimpleFormatter());
@@ -137,11 +155,11 @@ public class UpdatedDatasetDownloader {
         
         // Read the database file containing information about previously
         // downloaded files
-        DB db = new DB(outputDir);
+        DB db = new DB(databseDir);
         HashMap<String, HashMap<String, Dataset>> datasets = db.readIndex();
         
         // Download the current Socrata catalog
-        File catalogFile = db.catalogFile(dateKey);
+        File catalogFile = db.catalogFile(date);
         if (!catalogFile.exists()) {
             new SocrataCatalog(catalogFile).download("dataset");
         }
@@ -195,7 +213,7 @@ public class UpdatedDatasetDownloader {
             SynchronizedWriter writer = new SynchronizedWriter(out);
             ExecutorService es = Executors.newCachedThreadPool();
             for (int iThread = 0; iThread < threads; iThread++) {
-                es.execute(new DownloadTask(downloads, dateKey, outputDir, writer));
+                es.execute(new DownloadTask(downloads, date, databseDir, writer));
             }
             es.shutdown();
             try {
@@ -206,6 +224,12 @@ public class UpdatedDatasetDownloader {
         }
 
         LOGGER.log(Level.INFO, "DONE {0}", new Date());
+    }
+    
+    @Override
+    public void run(Args args) throws IOException {
+
+        this.run(args.getDirectory(), args.getDate(), args.getThreads());
     }
     
     private static final String COMMAND = 
@@ -231,7 +255,7 @@ public class UpdatedDatasetDownloader {
         }
         
         try {
-            new UpdatedDatasetDownloader().run(dateKey, threads, outputDir);
+            new UpdatedDatasetDownloader().run(outputDir, dateKey, threads);
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);

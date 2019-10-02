@@ -15,14 +15,15 @@
  */
 package org.urban.data.provider.socrata.archive;
 
-import java.io.File;
+import org.urban.data.provider.socrata.cli.Args;
 import java.io.PrintWriter;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.query.json.JQuery;
 import org.urban.data.core.query.json.JsonQuery;
 import org.urban.data.core.query.json.ResultTuple;
 import org.urban.data.core.query.json.SelectClause;
+import org.urban.data.provider.socrata.cli.Command;
+import org.urban.data.provider.socrata.cli.Help;
 
 /**
  * Query the catalog to get the names of all datasets. Allows to restrict the
@@ -30,9 +31,36 @@ import org.urban.data.core.query.json.SelectClause;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DatasetNameQuery {
+public class DatasetNameQuery implements Command {
    
-    public void run(DB db, Args args, PrintWriter out) throws java.io.IOException {
+    @Override
+    public void help() {
+
+        Help.printName(this.name(), "Query catalog file for dataset names");
+        Help.printDir();
+        Help.printDomain();
+        Help.printDataset();
+        Help.printDate("Date for catalog file (default: today)");
+        Help.printOutput("Output file (default: standard output)");
+    }
+
+    @Override
+    public String name() {
+
+        return "query";
+    }
+
+    @Override
+    public void run(Args args) throws java.io.IOException {
+        
+        DB db = args.getDB();
+        
+        PrintWriter out;
+        if (args.hasOutput()) {
+            out = FileSystem.openPrintWriter(args.getOutput());
+        } else {
+            out = new PrintWriter(System.out);
+        }
         
         SelectClause select = new SelectClause()
                 .add("domain", new JQuery("/metadata/domain"))
@@ -52,42 +80,7 @@ public class DatasetNameQuery {
                 out.println(tuple.join("\t"));
             }
         }
-    }
-
-    private final static String COMMAND =
-            "Usage:\n" +
-            "  {--domain=<domain>}\n" +
-            "  {--date=<date>}\n" +
-            "  {--dataset=<dataset>}\n" +
-            "  <database-dir>";
-    
-    private final static Logger LOGGER = Logger
-            .getLogger(DatasetNameQuery.class.getName());
-    
-    public static void main(String[] args) {
         
-        if ((args.length == 0) || (args.length > 4)) {
-            System.out.println(COMMAND);
-            System.exit(-1);
-        }
-        
-        Args cmd = new Args(args, COMMAND);
-        if (cmd.size() != 1) {
-            System.out.println(COMMAND);
-            System.exit(-1);
-        }
-        
-        DB db = new DB(new File(cmd.get(0)));
-        if (cmd.hasDate()) {
-            try (PrintWriter out = new PrintWriter(System.out)) {
-                new DatasetNameQuery().run(db, cmd, out);
-            } catch (java.io.IOException ex) {
-                LOGGER.log(Level.SEVERE, "RUN", ex);
-                System.exit(-1);
-            }
-        } else {
-            System.out.println("Not supported yet.");
-            System.exit(0);
-        }
+        out.close();
     }
 }
