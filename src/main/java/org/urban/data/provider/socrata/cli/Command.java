@@ -23,10 +23,12 @@ package org.urban.data.provider.socrata.cli;
 public interface Command {
    
     /**
-     * Print help statement for this command
+     * Print help statement for this command. The command description is only
+     * printed if the respective flag is true.
      * 
+     * @param includeDescription
      */
-    public void help();
+    public void help(boolean includeDescription);
     
     /**
      * Get the command name.

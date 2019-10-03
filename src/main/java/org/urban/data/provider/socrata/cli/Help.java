@@ -24,6 +24,11 @@ import org.urban.data.core.util.StringHelper;
  */
 public final class Help {
    
+    public static void printColumn() {
+        
+        System.out.println(" --" + Args.PARA_COLUMN + "  : Column name or index");
+    }
+   
     public static void printDate(String text) {
         
         System.out.println(" --" + Args.PARA_DATE + "    : " + text);
@@ -39,6 +44,12 @@ public final class Help {
         System.out.println(" --" + Args.PARA_BASEDIR + "     : Base directory for the archive");
     }
    
+    public static void printDescription(String text) {
+        
+        System.out.println(text);
+        System.out.println();
+    }
+    
     public static void printDomain() {
         
         System.out.println(" --" + Args.PARA_DOMAIN + "  : Unique domain name");
@@ -55,6 +66,11 @@ public final class Help {
         System.out.println();
     }
    
+    public static void printOrderBy() {
+        
+        System.out.println(" --" + Args.PARA_ORDERBY + "    : Order by value of count");
+    }
+   
     public static void printOutput(String text) {
         
         System.out.println(" --" + Args.PARA_OUTPUT + "  : " + text);
@@ -63,6 +79,11 @@ public final class Help {
     public static void printReport() {
         
         System.out.println(" --" + Args.PARA_REPORT + "  : Print actions but do not execute");
+    }
+   
+    public static void printReverse() {
+        
+        System.out.println(" --" + Args.PARA_REVERSE + "  : Reverse default output order");
     }
    
     public static void printThreads() {

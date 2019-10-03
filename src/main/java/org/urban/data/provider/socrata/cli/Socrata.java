@@ -20,13 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.urban.data.provider.socrata.archive.CleanEmptyFilesAndHTML;
-import org.urban.data.provider.socrata.archive.CreateDatasetLoadfile;
-import org.urban.data.provider.socrata.archive.DatasetNameQuery;
-import org.urban.data.provider.socrata.archive.DatasetStatsWriter;
-import org.urban.data.provider.socrata.archive.DateListingPrinter;
-import org.urban.data.provider.socrata.archive.DiskUsageStatsPrinter;
-import org.urban.data.provider.socrata.archive.UpdatedDatasetDownloader;
 
 /**
  * Socrata command line interface.
@@ -36,13 +29,15 @@ import org.urban.data.provider.socrata.archive.UpdatedDatasetDownloader;
 public class Socrata {
     
     private static final Command[] COMMANDS = {
-        new CleanEmptyFilesAndHTML(),
-        new DateListingPrinter(),
-        new UpdatedDatasetDownloader(),
-        new DiskUsageStatsPrinter(),
-        new CreateDatasetLoadfile(),
-        new DatasetNameQuery(),
-        new DatasetStatsWriter()
+        new Clean(),
+        new ColumnValues(),
+        new DownloadDates(),
+        new Download(),
+        new DiskUsage(),
+        new DatasetLoadfile(),
+        new DatasetNames(),
+        new DatasetSchema(),
+        new Parse()
     };
 
         private static final Logger LOGGER = Logger
@@ -61,10 +56,10 @@ public class Socrata {
         
         ArrayList<Command> commands = new ArrayList<>(commandListing().values());
         Collections.sort(commands, (cmd1, cmd2) -> (cmd1.name().compareTo(cmd2.name())));
-        System.out.println("Socrata Data Archive - Command line Tool (Version 0.1.0)");
+        System.out.println("Socrata Data Archive - Command line Tool (Version 0.1.1)");
         for (Command cmd : commands) {
             System.out.println();
-            cmd.help();
+            cmd.help(false);
         }
     }
     
@@ -85,7 +80,7 @@ public class Socrata {
         
         if (args.hasHelp()) {
             if (args.getHelp()) {
-                command.help();
+                command.help(true);
                 System.exit(0);
             }
         }

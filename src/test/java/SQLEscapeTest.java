@@ -21,7 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.urban.data.core.util.count.Counter;
-import org.urban.data.provider.socrata.archive.DatabaseLoader;
+import org.urban.data.provider.socrata.db.DatabaseLoader;
 
 /**
  *
@@ -48,14 +48,21 @@ public class SQLEscapeTest {
     public void tearDown() {
     }
 
-    // TODO add test methods here.
-    // The methods must be annotated with annotation @Test. For example:
-    //
     @Test
     public void testEscapeQuotes() {
     
         String term = "D'LILI BAKERY\\DOWN THE ROAD";
         String value = new DatabaseLoader(null).escapeTerm(term, new Counter());
         assertEquals("D\\'LILI BAKERY\\DOWN THE ROAD", value);
+    }
+    
+    @Test
+    public void testReplaceSpecialChars() {
+        
+        String name = 
+                "SERVICE CATEGORY\n" +
+                "(0K-08* ONLY)";
+        name = DatabaseLoader.replaceSpecialChars(name);
+        assertEquals("SERVICE_CATEGORY__0K_08__ONLY_", name);
     }
 }

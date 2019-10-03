@@ -13,53 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.cli;
 
-import org.urban.data.provider.socrata.cli.Args;
 import java.io.IOException;
-import org.urban.data.provider.socrata.cli.Command;
-import org.urban.data.provider.socrata.cli.Help;
+import org.urban.data.provider.socrata.db.DB;
+import org.urban.data.provider.socrata.db.DatabaseLoader;
+import org.urban.data.provider.socrata.db.Dataset;
 
 /**
  * Create load file for a given dataset.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class CreateDatasetLoadfile implements Command {
+public class DatasetLoadfile implements Command {
    
     @Override
-    public void help() {
+    public void help(boolean includeDescription) {
 
         Help.printName(this.name(), "Create load file and statement for dataset");
         Help.printDir();
         Help.printDomain();
         Help.printDataset();
         Help.printDate("Download date (default: today)");
+        Help.printOutput("Output directory");
     }
 
     @Override
     public String name() {
 
-        return "load";
+        return "dataset loadfile";
     }
    
     @Override
     public void run(Args args) throws IOException {
 
-        if (!args.hasDataset()) {
-            throw new IllegalArgumentException("No dataset given");
-        }
-        if (!args.hasDomain()) {
-            throw new IllegalArgumentException("No domain given");
+        if (!args.hasOutput()) {
+            throw new IllegalArgumentException("No output directory given");
         }
         
-        Dataset dataset = new Dataset(
-                args.getDataset(),
-                args.getDomain(),
-                args.getDate()
-        );
-        
-        DatabaseLoader loader = new DatabaseLoader(args.getDB());
-        loader.createLoadFile(dataset, args.getOutput());
+        DB db = args.getDB();
+        DatabaseLoader loader = new DatabaseLoader(db);
+
+        for (Dataset dataset : db.getDownloadedDatasets(args.asQuery())) {
+            loader.createLoadFile(dataset, args.getOutput());
+        }
     }
 }

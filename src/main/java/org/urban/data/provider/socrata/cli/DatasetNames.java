@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.cli;
 
-import org.urban.data.provider.socrata.cli.Args;
 import java.io.PrintWriter;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.query.json.JQuery;
 import org.urban.data.core.query.json.JsonQuery;
 import org.urban.data.core.query.json.ResultTuple;
 import org.urban.data.core.query.json.SelectClause;
-import org.urban.data.provider.socrata.cli.Command;
-import org.urban.data.provider.socrata.cli.Help;
+import org.urban.data.provider.socrata.db.DB;
+import org.urban.data.provider.socrata.db.Dataset;
+import org.urban.data.provider.socrata.db.DatasetQuery;
 
 /**
  * Query the catalog to get the names of all datasets. Allows to restrict the
@@ -31,10 +31,10 @@ import org.urban.data.provider.socrata.cli.Help;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DatasetNameQuery implements Command {
+public class DatasetNames implements Command {
    
     @Override
-    public void help() {
+    public void help(boolean includeDescription) {
 
         Help.printName(this.name(), "Query catalog file for dataset names");
         Help.printDir();
@@ -47,13 +47,17 @@ public class DatasetNameQuery implements Command {
     @Override
     public String name() {
 
-        return "query";
+        return "dataset names";
     }
 
     @Override
     public void run(Args args) throws java.io.IOException {
         
         DB db = args.getDB();
+        
+        String date = args.getDateDefaultLast();
+        
+        System.out.println("Dataset names for catalog from " + date);
         
         PrintWriter out;
         if (args.hasOutput()) {
@@ -67,16 +71,18 @@ public class DatasetNameQuery implements Command {
                 .add("dataset", new JQuery("/resource/id"))
                 .add("name", new JQuery("/resource/name"));
         
-        JsonQuery con = new JsonQuery(db.catalogFile(args.getDate()));
+        DatasetQuery query = new DatasetQuery()
+                .domain(args.getDomain())
+                .dataset(args.getDataset());
+        
+        JsonQuery con = new JsonQuery(db.catalogFile(date));
         for (ResultTuple tuple : con.executeQuery(select, true)) {
-            boolean output = true;
-            if (args.hasDomain()) {
-                output = tuple.get("domain").equals(args.getDomain());
-            }
-            if ((output) && (args.hasDataset())) {
-                output = tuple.get("dataset").equals(args.getDataset());
-            }
-            if (output) {
+            Dataset dataset = new Dataset(
+                    tuple.get("dataset"),
+                    tuple.get("domain"),
+                    date
+            );
+            if (query.matches(dataset)) {
                 out.println(tuple.join("\t"));
             }
         }

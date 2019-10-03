@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.cli;
 
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.provider.socrata.cli.Args;
-import org.urban.data.provider.socrata.cli.Command;
-import org.urban.data.provider.socrata.cli.Help;
+import org.urban.data.provider.socrata.db.DB;
+import org.urban.data.provider.socrata.db.Dataset;
+import org.urban.data.provider.socrata.db.DatasetQuery;
 
 /**
  * Print total number and size of datasets that were downloaded on a given date.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DiskUsageStatsPrinter implements Command {
+public class DiskUsage implements Command {
    
     private class DiskUsageStats {
     
@@ -55,11 +55,13 @@ public class DiskUsageStatsPrinter implements Command {
     }
 
     @Override
-    public void help() {
+    public void help(boolean includeDescription) {
 
         Help.printName(this.name(), "Disk usage");
         Help.printDir();
+        Help.printDomain();
         Help.printDate("Download date (default: all)");
+        Help.printDataset();
     }
 
     @Override
@@ -68,19 +70,19 @@ public class DiskUsageStatsPrinter implements Command {
         return "du";
     }
     
-    private DiskUsageStats run(DB db, String date) throws java.io.IOException {
+    private DiskUsageStats run(DB db, DatasetQuery query) throws java.io.IOException {
         
         DiskUsageStats stats = new DiskUsageStats();
         
-        for (Dataset dataset : db.downloadedAt(date)) {
+        for (Dataset dataset : db.getDatasets(query)) {
             stats.add(db.datasetFile(dataset));
         }
         
         String size = FileSystem.humanReadableByteCount(stats.totalSize());
-        System.out.println("-- Disk usage for files downloaded on " + date + " --");
+        System.out.println("-- Disk usage for " + query.toString());
         System.out.println("   Number of files     : " + stats.fileCount());
         System.out.println("   Total size on disk  : " + size);
-        System.out.println("-------------------------------------------------");
+        System.out.println();
         
         return stats;
     }
@@ -95,18 +97,17 @@ public class DiskUsageStatsPrinter implements Command {
             // available dates
             int fileCount = 0;
             long totalSize = 0;
-            for (String date : db.getDates()) {
-                DiskUsageStats stats = this.run(db, date);
+            for (String date : db.downloadDates()) {
+                DiskUsageStats stats = this.run(db, args.asQuery().date(date));
                 fileCount += stats.fileCount();
                 totalSize += stats.totalSize();
             }
             String size = FileSystem.humanReadableByteCount(totalSize);
-            System.out.println("-- Disk usage for all downloaded files ----------");
+            System.out.println("-- Disk usage for all downloaded files");
             System.out.println("   Number of files     : " + fileCount);
             System.out.println("   Total size on disk  : " + size);
-            System.out.println("-------------------------------------------------");
         } else {
-            this.run(db, args.getDate());
+            this.run(db, args.asQuery());
         }
     }
     
@@ -116,7 +117,7 @@ public class DiskUsageStatsPrinter implements Command {
             "  <databse-dir>";
     
     private static final Logger LOGGER = Logger
-            .getLogger(DiskUsageStatsPrinter.class.getName());
+            .getLogger(DiskUsage.class.getName());
     
     public static void main(String[] args) {
         
@@ -129,7 +130,7 @@ public class DiskUsageStatsPrinter implements Command {
         File inputDir = new File(args[1]);
         
         try {
-            new DiskUsageStatsPrinter().run(new DB(inputDir), date);
+            new DiskUsage().run(new DB(inputDir), new DatasetQuery().date(date));
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);

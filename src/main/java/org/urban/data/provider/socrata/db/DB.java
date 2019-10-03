@@ -13,27 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.db;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.logging.Level;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.util.count.Counter;
 
 /**
- *
+ * Socrata dataset archive interface. Defines the storage location for various
+ * data and statistic files. Maintains the index of downloaded datasets and
+ * provides access to these files.
+ * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
 public class DB {
@@ -53,9 +54,24 @@ public class DB {
         _baseDir = baseDir;
     }
     
+    /**
+     * Get downloaded catalog file for a given date. All catalog files are
+     * maintained within a special folder api.socrata.com. Similar to datasets
+     * the catalogs are maintained in folders that are named by the download
+     * date.
+     * 
+     * @param date
+     * @return 
+     */
     public File catalogFile(String date) {
         
-        return FileSystem.joinPath(_baseDir, "catalog." + date + ".json.gz");
+        return FileSystem.joinPath(
+                _baseDir, new String[]{
+                    "api.socrata.com",
+                    date,
+                    "catalog.json.gz"
+                }
+        );
     }
     
     /**
@@ -63,22 +79,42 @@ public class DB {
      * 
      * @return 
      */
-    public File databaseFile() {
+    private File databaseFile() {
         
         return FileSystem.joinPath(_baseDir, DBFILE);
     }
 
     /**
-     * File for a downloaded dataset.
+     * File for a downloaded dataset. Datasets are stored in a subfolder tsv
+     * within a directory that is named after the domain and the download date.
      * 
      * @param dataset
      * @return 
      */
     public File datasetFile(Dataset dataset) {
         
-        File file = FileSystem.joinPath(_baseDir, dataset.domain());
-        file = FileSystem.joinPath(file, dataset.downloadDate());
-        return FileSystem.joinPath(file, dataset.identifier() + ".tsv.gz");
+        return FileSystem.joinPath(
+                _baseDir,
+                new String[]{
+                    dataset.domain(),
+                    dataset.downloadDate(),
+                    "tsv",
+                    dataset.identifier() + ".tsv.gz"
+                }
+        );
+    }
+
+    /**
+     * Get dataset file.
+     * 
+     * @param identifier
+     * @param domain
+     * @param date
+     * @return 
+     */
+    public File datasetFile(String identifier, String domain, String date) {
+        
+        return this.datasetFile(new Dataset(identifier, domain, date));
     }
     
     public void deleteDatasets(List<Dataset> datasets) throws java.io.IOException {
@@ -90,7 +126,7 @@ public class DB {
         
         List<Dataset> db = new ArrayList<>();
         
-        for (Dataset dataset : this.listAllDatasets()) {
+        for (Dataset dataset : this.getDatasets()) {
             String key = dataset.key();
             if (deleteIndex.contains(key)) {
                 File file = this.datasetFile(dataset);
@@ -102,45 +138,14 @@ public class DB {
             }
         }
         
-        try (PrintWriter out = FileSystem.openPrintWriter(this.databaseFile())) {
+        try (DatabaseWriter writer = this.writer(false)) {
             for (Dataset dataset : db) {
-                DB.write(dataset, out);
+                writer.write(dataset);
             }
         }
     }
     
-    /**
-     * Read database file for a given date. Returns entries that were downloaded
-     * at the given date.
-     * 
-     * 
-     * @param date
-     * @return
-     * @throws java.io.IOException 
-     */
-    public List<Dataset> downloadedAt(String date) throws java.io.IOException {
-        
-        List<Dataset> db = new ArrayList<>();
-        
-        File file = this.databaseFile();
-        if (file.exists()) {
-            try (BufferedReader in = FileSystem.openReader(file)) {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    String[] tokens = line.split("\t");
-                    String domain = tokens[0];
-                    String dataset = tokens[1];
-                    if (tokens[2].equals(date)) {
-                        db.add(new Dataset(dataset, domain, date, tokens[3]));
-                    }
-                }
-            }
-        }
-        
-        return db;
-    }
-    
-    public List<String> getDates() {
+    public List<String> downloadDates() {
     
         HashSet<String> dates = new HashSet<>();
         File file = this.databaseFile();
@@ -161,7 +166,7 @@ public class DB {
         return result;
     }
     
-    public HashMap<String, Integer> getDateStats() {
+    public HashMap<String, Integer> downloadDateStats() {
     
         HashMap<String, Counter> stats = new HashMap<>();
         
@@ -189,21 +194,47 @@ public class DB {
         }
         return result;
     }
-    
-    public List<Dataset> indexToList(HashMap<String, HashMap<String, Dataset>> db) {
+
+    /**
+     * Get a list containing the latest download for each dataset at or before
+     * the date that is specified in the given query.
+     * 
+     * @param query
+     * @return
+     * @throws java.io.IOException 
+     */
+    public List<Dataset> getDownloadedDatasets(DatasetQuery query) throws java.io.IOException {
         
-        List<Dataset> result = new ArrayList<>();
+        HashMap<String, HashMap<String, Dataset>> db = new HashMap<>();
         
-        for (String domain : db.keySet()) {
-            for (String dataset : db.get(domain).keySet()) {
-                result.add( db.get(domain).get(dataset));
+        File file = this.databaseFile();
+        if (file.exists()) {
+            try (BufferedReader in = FileSystem.openReader(file)) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    String[] tokens = line.split("\t");
+                    Dataset ds;
+                    ds = new Dataset(tokens[1], tokens[0], tokens[2], tokens[3]);
+                    if (query.matchesAtOrBefore(ds)) {
+                        if (!db.containsKey(ds.domain())) {
+                            db.put(ds.domain(), new HashMap<>());
+                        }
+                        db.get(ds.domain()).put(ds.identifier(), ds);
+                    }
+                }
             }
         }
         
+        List<Dataset> result = new ArrayList<>();
+        for (String domain : db.keySet()) {
+            for (Dataset ds : db.get(domain).values()) {
+                result.add(ds);
+            }
+        }
         return result;
     }
 
-    public List<Dataset> listAllDatasets() throws java.io.IOException {
+    public List<Dataset> getDatasets(DatasetQuery query) throws java.io.IOException {
         
         List<Dataset> db = new ArrayList<>();
         
@@ -213,9 +244,11 @@ public class DB {
                 String line;
                 while ((line = in.readLine()) != null) {
                     String[] tokens = line.split("\t");
-                    String domain = tokens[0];
-                    String dataset = tokens[1];
-                    db.add(new Dataset(dataset, domain, tokens[2], tokens[3]));
+                    Dataset ds;
+                    ds = new Dataset(tokens[1], tokens[0], tokens[2], tokens[3]);
+                    if (query.matches(ds)) {
+                        db.add(ds);
+                    }
                 }
             }
         }
@@ -223,20 +256,21 @@ public class DB {
         return db;
     }
     
-    public CSVParser open(Dataset dataset) throws java.io.IOException {
+    public List<Dataset> getDatasets() throws java.io.IOException {
         
-        InputStream is = FileSystem.openFile(this.datasetFile(dataset));
-        return new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
+        return this.getDatasets(new DatasetQuery());
     }
     
     /**
-     * Read database file. The file is expected to be in sequential order such
-     * that each file entries overrides previous entries for the same dataset.
+     * Read database file. Contains the last download for each dataset.
+     * 
+     * The file is expected to be in sequential order such that each file
+     * entries overrides previous entries for the same dataset.
      * 
      * @return
      * @throws java.io.IOException 
      */
-    public HashMap<String, HashMap<String, Dataset>> readIndex() throws java.io.IOException {
+    public HashMap<String, HashMap<String, Dataset>> getIndex() throws java.io.IOException {
         
         HashMap<String, HashMap<String, Dataset>> db = new HashMap<>();
         
@@ -263,15 +297,13 @@ public class DB {
     }
     
     /**
-     * Read database file as it was on the given date. 
+     * Get the last date on which a dataset was downloaded.
      * 
-     * @param date
-     * @return
-     * @throws java.io.IOException 
+     * @return 
      */
-    public HashMap<String, HashMap<String, Dataset>> readIndex(String date) throws java.io.IOException {
-        
-        HashMap<String, HashMap<String, Dataset>> db = new HashMap<>();
+    public String lastDownloadDate() {
+    
+        String maxDate = null;
         
         File file = this.databaseFile();
         if (file.exists()) {
@@ -279,38 +311,72 @@ public class DB {
                 String line;
                 while ((line = in.readLine()) != null) {
                     String[] tokens = line.split("\t");
-                    String domain = tokens[0];
-                    String dataset = tokens[1];
-                    String downloadDate = tokens[2];
-                    if (downloadDate.compareTo(date) <= 0) {
-                        if (!db.containsKey(domain)) {
-                            db.put(domain, new HashMap<>());
-                        }
-                        db.get(domain).put(
-                                dataset,
-                                new Dataset(dataset, domain, downloadDate, tokens[3])
-                        );
+                    String date = tokens[2];
+                    if (maxDate == null) {
+                        maxDate = date;
+                    } else if (maxDate.compareTo(date) < 0) {
+                        maxDate = date;
                     }
                 }
+            } catch (java.io.IOException ex) {
+                throw new RuntimeException(ex);
             }
         }
         
-        return db;
+        return maxDate;
     }
     
-    public static void write(Dataset dataset, PrintWriter out) {
+    /**
+     * Log files are stored in a separate logs directory. Files are named after
+     * the download date.
+     * 
+     * @param date
+     * @return 
+     */
+    public File logFile(String date) {
         
-        String state;
-        if (dataset.successfulDownload()) {
-            state = DB.DOWNLOAD_SUCCESS;
-        } else {
-            state = DB.DOWNLOAD_FAILED;
-        }
-        out.println(
-                dataset.domain() + "\t" + 
-                dataset.identifier() + "\t" + 
-                dataset.downloadDate() + "\t" + 
-                state
+        return FileSystem.joinPath(
+                _baseDir,
+                new String[]{
+                    "logs",
+                    date + ".log"
+                }
         );
+    }
+    
+    public CSVParser open(Dataset dataset) throws java.io.IOException {
+        
+        InputStream is = FileSystem.openFile(this.datasetFile(dataset));
+        return new CSVParser(
+                new InputStreamReader(is),
+                CSVFormat.TDF
+                        .withFirstRecordAsHeader()
+                        .withIgnoreHeaderCase()
+                        .withTrim()
+        );
+    }
+    
+    /**
+     * Get writer for the database index file.
+     * 
+     * @param append
+     * @return
+     * @throws java.io.IOException 
+     */
+    public DatabaseWriter writer(boolean append) throws java.io.IOException {
+        
+        return new DatabaseWriter(this.databaseFile(), append);
+    }
+    
+    /**
+     * Get database index file writer. By default the writer will append to an
+     * existing file.
+     * 
+     * @return
+     * @throws java.io.IOException 
+     */
+    public DatabaseWriter writer() throws java.io.IOException {
+        
+        return this.writer(true);
     }
 }

@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.cli;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import org.urban.data.provider.socrata.cli.Args;
-import org.urban.data.provider.socrata.cli.Command;
-import org.urban.data.provider.socrata.cli.Help;
 
 /**
  * Print download dates and number of files. Prints a listing of all dates on
@@ -29,11 +26,11 @@ import org.urban.data.provider.socrata.cli.Help;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DateListingPrinter implements Command {
+public class DownloadDates implements Command {
 
 
     @Override
-    public void help() {
+    public void help(boolean includeDescription) {
 
         Help.printName(this.name(), "Download dates");
         Help.printDir();
@@ -42,13 +39,13 @@ public class DateListingPrinter implements Command {
     @Override
     public String name() {
 
-        return "dates";
+        return "download dates";
     }
 
     @Override
     public void run(Args args) throws java.io.IOException {
 
-        HashMap<String, Integer> stats = args.getDB().getDateStats();
+        HashMap<String, Integer> stats = args.getDB().downloadDateStats();
         
         ArrayList<String> dates = new ArrayList<>(stats.keySet());
         Collections.sort(dates);

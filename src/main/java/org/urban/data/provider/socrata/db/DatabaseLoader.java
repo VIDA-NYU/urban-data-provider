@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.db;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -54,38 +54,37 @@ public class DatabaseLoader {
         Counter truncCount = new Counter();
         
         List<ColumnStats> schema = null;
+        
         try (
                 CSVParser in = _db.open(dataset);
                 PrintWriter out = FileSystem.openPrintWriter(loadFile)
         ) {
+            schema = new ArrayList<>();
+            for (String name : in.getHeaderNames()) {
+                name = DatabaseLoader.replaceSpecialChars(name);
+                schema.add(new ColumnStats(name));
+            }            
             for (CSVRecord record : in) {
-                if (schema == null) {
-                    schema = new ArrayList<>();
-                    for (String name : record) {
-                        schema.add(new ColumnStats(name.replaceAll(" ", "_")));
+                int count = 0;
+                String line = null;
+                for (String value : record) {
+                    value = this.escapeTerm(value, truncCount);
+                    schema.get(count).add(value);
+                    if (line == null) {
+                        line = value;
+                    } else {
+                        line += "\t" + value;
                     }
-                } else {
-                    int count = 0;
-                    String line = null;
-                    for (String value : record) {
-                        value = this.escapeTerm(value, truncCount);
-                        schema.get(count).add(value);
-                        if (line == null) {
-                            line = value;
-                        } else {
-                            line += "\t" + value;
-                        }
-                        count++;
-                    }
-                    for (int iCol = count; iCol < schema.size(); iCol++) {
-                        schema.get(iCol).add(null);
-                        if (line != null) {
-                            line += "\t";
-                        }
-                    }
+                    count++;
+                }
+                for (int iCol = count; iCol < schema.size(); iCol++) {
+                    schema.get(iCol).add(null);
                     if (line != null) {
-                        out.println(line);
+                        line += "\t";
                     }
+                }
+                if (line != null) {
+                    out.println(line);
                 }
             }
         }
@@ -135,5 +134,10 @@ public class DatabaseLoader {
             value = value.replace("\\\\", "\\\\\\\\");
         }
         return value;
+    }
+    
+    public static String replaceSpecialChars(String name) {
+        
+        return name.replaceAll("[^\\dA-Za-z]", "_");
     }
 }

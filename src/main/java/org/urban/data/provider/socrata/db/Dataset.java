@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.db;
 
 import java.util.Date;
 
@@ -79,5 +79,11 @@ public class Dataset {
     public boolean successfulDownload() {
         
         return _success;
+    }
+    
+    @Override
+    public String toString() {
+        
+        return _domain + "/" + _downloadDate + "/" + _identifier;
     }
 }

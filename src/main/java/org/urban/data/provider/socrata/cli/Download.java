@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.cli;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,15 +33,14 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import org.apache.commons.io.IOUtils;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.io.SynchronizedWriter;
 import org.urban.data.core.query.json.JQuery;
 import org.urban.data.core.query.json.JsonQuery;
 import org.urban.data.core.query.json.ResultTuple;
 import org.urban.data.core.query.json.SelectClause;
 import org.urban.data.provider.socrata.SocrataCatalog;
-import org.urban.data.provider.socrata.cli.Args;
-import org.urban.data.provider.socrata.cli.Command;
-import org.urban.data.provider.socrata.cli.Help;
+import org.urban.data.provider.socrata.db.DB;
+import org.urban.data.provider.socrata.db.DatabaseWriter;
+import org.urban.data.provider.socrata.db.Dataset;
 
 /**
  * Download all datasets from the Socrata API that have been modified since the
@@ -56,28 +54,28 @@ import org.urban.data.provider.socrata.cli.Help;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class UpdatedDatasetDownloader implements Command {
+public class Download implements Command {
     
     private static final Logger LOGGER = Logger
-            .getLogger(UpdatedDatasetDownloader.class.getName());
+            .getLogger(Download.class.getName());
 
     private class DownloadTask implements Runnable {
 
         private final ConcurrentLinkedQueue<ResultTuple> _datasets;
-        private final String _dateKey;
-        private final File _outputDir;
-        private final SynchronizedWriter _writer;
+        private final DB _db;
+        private final String _date;
+        private final DatabaseWriter _writer;
         
         public DownloadTask(
                 ConcurrentLinkedQueue<ResultTuple> datasets,
-                String dateKey,
-                File outputDir,
-                SynchronizedWriter writer
+                DB db,
+                String date,
+                DatabaseWriter writer
         ) {
         
             _datasets = datasets;
-            _dateKey = dateKey;
-            _outputDir = outputDir;
+            _db = db;
+            _date = date;
             _writer = writer;
         }
         
@@ -109,17 +107,14 @@ public class UpdatedDatasetDownloader implements Command {
                     LOGGER.log(Level.INFO, url);
                     String state;
                     try {
-                        File dir = FileSystem.joinPath(_outputDir, domain);
-                        dir = FileSystem.joinPath(dir, _dateKey);
-                        File outputFile = FileSystem.joinPath(dir, dataset + ".tsv.gz");
-                        this.download(outputFile, url);
+                        File file = _db.datasetFile(dataset, domain, _date);
+                        this.download(file, url);
                         state = DB.DOWNLOAD_SUCCESS;
                     } catch (java.io.IOException ex) {
                         LOGGER.log(Level.SEVERE, url, ex);
                         state = DB.DOWNLOAD_FAILED;
                     }
-                    _writer.write(domain + "\t" + dataset + "\t" + _dateKey + "\t" + state);
-                    _writer.flush();
+                    _writer.write(new Dataset(dataset, domain, _date, state));
                 } else {
                     LOGGER.log(Level.WARNING, permalink);
                 }
@@ -129,7 +124,7 @@ public class UpdatedDatasetDownloader implements Command {
     }
 
     @Override
-    public void help() {
+    public void help(boolean includeDescription) {
 
         Help.printName(this.name(), "Download datasets that have changed");
         Help.printDir();
@@ -142,11 +137,10 @@ public class UpdatedDatasetDownloader implements Command {
         return "download";
     }
 
-    public void run(File databseDir, String date, int threads) throws java.io.IOException {
+    public void run(DB db, String date, int threads) throws java.io.IOException {
         
         // Configure the log file
-        File logFile = FileSystem.joinPath(databseDir, "logs");
-        logFile = FileSystem.joinPath(logFile, date + ".log");
+        File logFile = db.logFile(date);
         FileSystem.createParentFolder(logFile);
         FileHandler fh = new FileHandler(logFile.getAbsolutePath());
         fh.setFormatter(new SimpleFormatter());
@@ -155,12 +149,12 @@ public class UpdatedDatasetDownloader implements Command {
         
         // Read the database file containing information about previously
         // downloaded files
-        DB db = new DB(databseDir);
-        HashMap<String, HashMap<String, Dataset>> datasets = db.readIndex();
+        HashMap<String, HashMap<String, Dataset>> datasets = db.getIndex();
         
         // Download the current Socrata catalog
         File catalogFile = db.catalogFile(date);
         if (!catalogFile.exists()) {
+            FileSystem.createParentFolder(catalogFile);
             new SocrataCatalog(catalogFile).download("dataset");
         }
         
@@ -209,11 +203,10 @@ public class UpdatedDatasetDownloader implements Command {
         LOGGER.log(Level.INFO, "START {0}", new Date());
         
         // Download all updated datasets
-        try (PrintWriter out = FileSystem.openPrintWriter(db.databaseFile(), true)) {
-            SynchronizedWriter writer = new SynchronizedWriter(out);
+        try (DatabaseWriter writer = db.writer()) {
             ExecutorService es = Executors.newCachedThreadPool();
             for (int iThread = 0; iThread < threads; iThread++) {
-                es.execute(new DownloadTask(downloads, date, databseDir, writer));
+                es.execute(new DownloadTask(downloads, db, date, writer));
             }
             es.shutdown();
             try {
@@ -229,7 +222,7 @@ public class UpdatedDatasetDownloader implements Command {
     @Override
     public void run(Args args) throws IOException {
 
-        this.run(args.getDirectory(), args.getDate(), args.getThreads());
+        this.run(args.getDB(), args.getDateDefaultToday(), args.getThreads());
     }
     
     private static final String COMMAND = 
@@ -255,7 +248,7 @@ public class UpdatedDatasetDownloader implements Command {
         }
         
         try {
-            new UpdatedDatasetDownloader().run(outputDir, dateKey, threads);
+            new Download().run(new DB(outputDir), dateKey, threads);
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);

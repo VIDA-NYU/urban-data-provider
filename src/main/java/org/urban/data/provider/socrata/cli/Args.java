@@ -16,12 +16,15 @@
 package org.urban.data.provider.socrata.cli;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import org.urban.data.provider.socrata.archive.DB;
+import org.urban.data.core.util.StringHelper;
+import org.urban.data.provider.socrata.db.DB;
+import org.urban.data.provider.socrata.db.DatasetQuery;
 
 /**
  * Helper class for default command line arguments of archive management tools.
@@ -34,30 +37,43 @@ public class Args {
      * Environment variables
      */
     public static final String ENV_DATABASEDIR = "SOCRATA_DBDIR";
+    public static final String ENV_DOMAIN = "SOCRATA_DOMAIN";
     public static final String ENV_THREADS = "SOCRATA_THREADS";
+    
+    /**
+     * Argument value for order by parameter
+     */
+    public static final String ORDER_BY_COUNT = "count";
+    public static final String ORDER_BY_VALUE = "value";
     
     /**
      * Command line parameter options
      */
     public final static String PARA_BASEDIR = "dir";
+    public final static String PARA_COLUMN = "column";
     public final static String PARA_DATASET = "dataset";
     public final static String PARA_DATE = "date";
     public final static String PARA_DOMAIN = "domain";
     public final static String PARA_HELP = "help";
     public final static String PARA_HTML = "html";
+    public final static String PARA_ORDERBY = "orderby";
     public final static String PARA_OUTPUT = "output";
     public final static String PARA_REPORT = "report";
+    public final static String PARA_REVERSE = "reverse";
     public final static String PARA_THREADS = "threads";
     private final static HashSet<String> PARAMETERS = new HashSet<>(
             Arrays.asList(new String[]{
                 PARA_BASEDIR,
+                PARA_COLUMN,
                 PARA_DATASET,
                 PARA_DATE,
                 PARA_DOMAIN,
                 PARA_HELP,
                 PARA_HTML,
+                PARA_ORDERBY,
                 PARA_OUTPUT,
                 PARA_REPORT,
+                PARA_REVERSE,
                 PARA_THREADS
             })
     );
@@ -67,10 +83,18 @@ public class Args {
     
     public Args(String[] args) {
 
-        _command = args[0];
-        _parameters = new HashMap<>();
-        
-        for (int iArg = 1; iArg < args.length; iArg++) {
+        ArrayList<String> tokens = new ArrayList<>();
+        int argIndex = 0;
+        while (!args[argIndex].startsWith("--")) {
+            tokens.add(args[argIndex++]);
+            if (argIndex >= args.length) {
+                break;
+            }
+        }
+        _command = StringHelper.joinStrings(tokens, " ");
+
+        _parameters = new HashMap<>();        
+        for (int iArg = argIndex; iArg < args.length; iArg++) {
             String arg = args[iArg];
             if (arg.startsWith("--")) {
                 String para = arg.substring(2);
@@ -81,7 +105,7 @@ public class Args {
                     key = para.substring(0, pos).trim().toLowerCase();
                     value = para.substring(pos + 1).trim();
                 } else {
-                    key = para.toLowerCase();
+                    key = para.toLowerCase().toLowerCase();
                     value = Boolean.toString(true);
                 }
                 if (PARAMETERS.contains(key)) {
@@ -95,9 +119,22 @@ public class Args {
         }
     }
     
+    public DatasetQuery asQuery() {
+        
+        return new DatasetQuery()
+                .domain(this.getDomain())
+                .date(this.getDate())
+                .dataset(this.getDataset());
+    }
+    
     public String command() {
     
         return _command;
+    }
+
+    public String getColumn() {
+        
+        return _parameters.get(PARA_COLUMN);
     }
     
     public String getDataset() {
@@ -124,11 +161,23 @@ public class Args {
     }
     
     /**
-     * Get the value of the date parameter. If the parameter was not given the
-     * current date is returned as the default value;
+     * Get the value of the date parameter. The result is null if the parameter
+     * was not given.
+     * 
      * @return 
      */
     public String getDate() {
+        
+        return _parameters.get(PARA_DATE);
+    }
+    
+    /**
+     * Get the value of the date parameter. If the parameter was not given the
+     * current date is returned as the default value.
+     * 
+     * @return 
+     */
+    public String getDateDefaultToday() {
         
         if (this.hasDate()) {
             return _parameters.get(PARA_DATE);
@@ -137,9 +186,41 @@ public class Args {
         }
     }
     
+    /**
+     * Get the value of the date parameter. If the parameter was not given the
+     * last download date is returned as the default value.
+     * 
+     * @return 
+     */
+    public String getDateDefaultLast() {
+        
+        if (this.hasDate()) {
+            return _parameters.get(PARA_DATE);
+        } else {
+            return this.getDB().lastDownloadDate();
+        }
+    }
+    
+    /**
+     * Get the value for the domain parameter. If the parameter is not set
+     * the value from the respective environment variable is returned. If
+     * neither value is set the result is null.
+     * 
+     * @return 
+     */
     public String getDomain() {
         
-        return _parameters.get(PARA_DOMAIN);
+        if (_parameters.containsKey(PARA_DOMAIN)) {
+            return _parameters.get(PARA_DOMAIN);
+        } else {
+            String val = System.getenv().get(ENV_DOMAIN);
+            if (val != null) {
+                if (!val.trim().equals("")) {
+                    return val.trim();
+                }
+            }
+        }
+        return null;
     }
     
     public boolean getHelp() {
@@ -160,6 +241,15 @@ public class Args {
         
         if (this.hasReport()) {
             return Boolean.parseBoolean(_parameters.get(PARA_REPORT));
+        } else {
+            return false;
+        }
+    }
+    
+    public boolean getReverse() {
+        
+        if (this.hasReverse()) {
+            return Boolean.parseBoolean(_parameters.get(PARA_REVERSE));
         } else {
             return false;
         }
@@ -190,9 +280,22 @@ public class Args {
         return 6;
     }
     
+    public String getOrderBy() {
+        
+        if (this.hasOrderBy()) {
+            return _parameters.get(PARA_ORDERBY);
+        } else {
+            return ORDER_BY_VALUE;
+        }
+    }
     public File getOutput() {
         
         return new File(_parameters.get(PARA_OUTPUT));
+    }
+    
+    public boolean hasColumn() {
+        
+        return _parameters.containsKey(PARA_COLUMN);
     }
     
     public boolean hasDataset() {
@@ -225,8 +328,18 @@ public class Args {
         return _parameters.containsKey(PARA_OUTPUT);
     }
     
+    public boolean hasOrderBy() {
+        
+        return _parameters.containsKey(PARA_ORDERBY);
+    }
+    
     public boolean hasReport() {
         
         return _parameters.containsKey(PARA_REPORT);
+    }
+    
+    public boolean hasReverse() {
+        
+        return _parameters.containsKey(PARA_REVERSE);
     }
 }

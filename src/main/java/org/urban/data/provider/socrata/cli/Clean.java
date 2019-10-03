@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.archive;
+package org.urban.data.provider.socrata.cli;
 
 import java.io.File;
 import java.io.InputStream;
@@ -25,9 +25,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.provider.socrata.cli.Args;
-import org.urban.data.provider.socrata.cli.Command;
-import org.urban.data.provider.socrata.cli.Help;
+import org.urban.data.provider.socrata.db.DB;
+import org.urban.data.provider.socrata.db.Dataset;
 
 /**
  * Remove all downloaded files that are empty, flagged as not successful or
@@ -35,7 +34,7 @@ import org.urban.data.provider.socrata.cli.Help;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class CleanEmptyFilesAndHTML implements Command {
+public class Clean implements Command {
 
     private static final String[] HTML_LABELS = {
         "!DOCTYPE",
@@ -48,7 +47,7 @@ public class CleanEmptyFilesAndHTML implements Command {
     };
     
     @Override
-    public void help() {
+    public void help(boolean includeDescription) {
 
         Help.printName(this.name(), "Remove empty datasets and HTML files");
         Help.printDir();
@@ -112,20 +111,10 @@ public class CleanEmptyFilesAndHTML implements Command {
 
         DB db = args.getDB();
         
-        List<Dataset> datasets;
-        if (args.hasDate()) {
-            datasets = db.downloadedAt(args.getDate());
-        } else {
-            datasets = db.listAllDatasets();
-        }
+        List<Dataset> datasets = db.getDatasets(args.asQuery());
         
         List<Dataset> deleteDatasets = new ArrayList<>();
         for (Dataset dataset : datasets) {
-            if (args.hasDomain()) {
-                if (!args.getDomain().equals(dataset.domain())) {
-                    continue;
-                }
-            }
             File file = db.datasetFile(dataset);
             if ((file.exists()) && (dataset.successfulDownload())) {
                 if (this.markForDelete(file, args.getHtml())) {
