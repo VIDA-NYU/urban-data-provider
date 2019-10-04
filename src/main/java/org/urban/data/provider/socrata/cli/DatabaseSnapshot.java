@@ -44,6 +44,7 @@ public class DatabaseSnapshot implements Command {
         Help.printDomain();
         Help.printDate("Download date (default: last)");
         Help.printDataset();
+        Help.printStatsOnly();
     }
 
     @Override
@@ -78,6 +79,8 @@ public class DatabaseSnapshot implements Command {
         int datasetCount = 0;
         int missingDatasets = 0;
         
+        boolean statsOnly = args.getStatsOnly();
+        
         for (ResultTuple t : rs) {
             String domainKey = t.get("domain");
             String dsId = t.get("dataset");
@@ -92,17 +95,21 @@ public class DatabaseSnapshot implements Command {
                 }
             }
             datasetCount++;
-            System.out.print(domainKey + "\t" + dsId + "\t" + t.get("name"));
+            String lineSuffix;
             if (ds != null) {
-                System.out.println("\ttrue\t" + db.datasetFile(ds).getAbsolutePath());
+                lineSuffix = "true\t" + db.datasetFile(ds).getAbsolutePath();
             } else {
-                System.out.println("\tfalse\t" + t.get("link"));
+                lineSuffix = "false\t" + t.get("link");
                 missingDatasets++;
+            }
+            if (!statsOnly) {
+                System.out.print(domainKey + "\t" + dsId + "\t" + t.get("name") + "\t" + lineSuffix);
             }
         }
         System.out.println();
-        System.out.println("Catalog entries for " + query + ": " + datasetCount);
-        System.out.println("Missing files                : " + missingDatasets);
+        System.out.println("Catalog entries on " + date + ": " + datasetCount);
+        System.out.println("Downloaded files           : " + (datasetCount - missingDatasets));
+        System.out.println("Missing files              : " + missingDatasets);
     }
     
     private HashMap<String, HashMap<String, Dataset>> toIndex(List<Dataset> datasets) {

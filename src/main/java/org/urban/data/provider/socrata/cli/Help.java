@@ -86,6 +86,11 @@ public final class Help {
         System.out.println(" --" + Args.PARA_REVERSE + "  : Reverse default output order");
     }
    
+    public static void printStatsOnly() {
+        
+        System.out.println(" --" + Args.PARA_STATS + "  : Only output statistics");
+    }
+   
     public static void printThreads() {
         
         System.out.println(" --" + Args.PARA_THREADS + " : Number of parallel threads used");

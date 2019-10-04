@@ -60,6 +60,7 @@ public class Args {
     public final static String PARA_OUTPUT = "output";
     public final static String PARA_REPORT = "report";
     public final static String PARA_REVERSE = "reverse";
+    public final static String PARA_STATS = "stats";
     public final static String PARA_THREADS = "threads";
     private final static HashSet<String> PARAMETERS = new HashSet<>(
             Arrays.asList(new String[]{
@@ -74,6 +75,7 @@ public class Args {
                 PARA_OUTPUT,
                 PARA_REPORT,
                 PARA_REVERSE,
+                PARA_STATS,
                 PARA_THREADS
             })
     );
@@ -233,7 +235,7 @@ public class Args {
     
     public boolean getHtml() {
         
-        if (this.hasHtml()) {
+        if (_parameters.containsKey(PARA_HTML)) {
             return Boolean.parseBoolean(_parameters.get(PARA_HTML));
         } else {
             return false;
@@ -242,7 +244,7 @@ public class Args {
     
     public boolean getReport() {
         
-        if (this.hasReport()) {
+        if (_parameters.containsKey(PARA_REPORT)) {
             return Boolean.parseBoolean(_parameters.get(PARA_REPORT));
         } else {
             return false;
@@ -251,8 +253,17 @@ public class Args {
     
     public boolean getReverse() {
         
-        if (this.hasReverse()) {
+        if (_parameters.containsKey(PARA_REVERSE)) {
             return Boolean.parseBoolean(_parameters.get(PARA_REVERSE));
+        } else {
+            return false;
+        }
+    }
+    
+    public boolean getStatsOnly() {
+        
+        if (_parameters.containsKey(PARA_STATS)) {
+            return Boolean.parseBoolean(_parameters.get(PARA_STATS));
         } else {
             return false;
         }
@@ -285,7 +296,7 @@ public class Args {
     
     public String getOrderBy() {
         
-        if (this.hasOrderBy()) {
+        if (_parameters.containsKey(PARA_ORDERBY)) {
             return _parameters.get(PARA_ORDERBY);
         } else {
             return ORDER_BY_VALUE;
@@ -321,28 +332,8 @@ public class Args {
         return _parameters.containsKey(PARA_HELP);
     }
     
-    public boolean hasHtml() {
-        
-        return _parameters.containsKey(PARA_HTML);
-    }
-    
     public boolean hasOutput() {
         
         return _parameters.containsKey(PARA_OUTPUT);
-    }
-    
-    public boolean hasOrderBy() {
-        
-        return _parameters.containsKey(PARA_ORDERBY);
-    }
-    
-    public boolean hasReport() {
-        
-        return _parameters.containsKey(PARA_REPORT);
-    }
-    
-    public boolean hasReverse() {
-        
-        return _parameters.containsKey(PARA_REVERSE);
     }
 }
