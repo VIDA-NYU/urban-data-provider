@@ -54,10 +54,10 @@ import org.urban.data.provider.socrata.db.Dataset;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class Download implements Command {
+public class DownloadDatasets implements Command {
     
     private static final Logger LOGGER = Logger
-            .getLogger(Download.class.getName());
+            .getLogger(DownloadDatasets.class.getName());
 
     private class DownloadTask implements Runnable {
 
@@ -248,7 +248,7 @@ public class Download implements Command {
         }
         
         try {
-            new Download().run(new DB(outputDir), dateKey, threads);
+            new DownloadDatasets().run(new DB(outputDir), dateKey, threads);
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);

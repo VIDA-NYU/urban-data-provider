@@ -54,7 +54,7 @@ public class DatasetLoadfile implements Command {
         DB db = args.getDB();
         DatabaseLoader loader = new DatabaseLoader(db);
 
-        for (Dataset dataset : db.getDownloadedDatasets(args.asQuery())) {
+        for (Dataset dataset : db.getSnapshot(args.asQuery())) {
             loader.createLoadFile(dataset, args.getOutput());
         }
     }

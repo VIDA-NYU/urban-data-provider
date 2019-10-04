@@ -104,6 +104,9 @@ public class Args {
                     int pos = para.indexOf("=");
                     key = para.substring(0, pos).trim().toLowerCase();
                     value = para.substring(pos + 1).trim();
+                    if (value.equals("")) {
+                        value = null;
+                    }
                 } else {
                     key = para.toLowerCase().toLowerCase();
                     value = Boolean.toString(true);

@@ -32,11 +32,12 @@ public class Socrata {
         new Clean(),
         new ColumnValues(),
         new DownloadDates(),
-        new Download(),
+        new DownloadDatasets(),
         new DiskUsage(),
         new DatasetLoadfile(),
         new DatasetNames(),
         new DatasetSchema(),
+        new DatabaseSnapshot(),
         new Parse()
     };
 

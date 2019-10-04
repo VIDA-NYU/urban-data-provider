@@ -65,7 +65,7 @@ public class ColumnValues implements Command {
             columnIndex = -1;
         }
 
-        for (Dataset dataset : db.getDownloadedDatasets(args.asQuery())) {
+        for (Dataset dataset : db.getSnapshot(args.asQuery())) {
             try (CSVParser in = db.open(dataset)) {
                 if (columnIndex == -1) {
                     if (in.getHeaderMap().containsKey(columnPara)) {

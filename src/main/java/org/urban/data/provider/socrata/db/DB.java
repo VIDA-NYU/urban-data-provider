@@ -196,14 +196,18 @@ public class DB {
     }
 
     /**
-     * Get a list containing the latest download for each dataset at or before
-     * the date that is specified in the given query.
+     * Get a snapshot of datasets that have been downloaded at the given date.
+     * The result will contain an entry for the latest download of every dataset
+     * that matches the domain and dataset identifier in the query and that was
+     * downloaded at or before the given date. If no date is given in the query
+     * the latest download for every matching dataset will be included in the
+     * result.
      * 
      * @param query
      * @return
      * @throws java.io.IOException 
      */
-    public List<Dataset> getDownloadedDatasets(DatasetQuery query) throws java.io.IOException {
+    public List<Dataset> getSnapshot(DatasetQuery query) throws java.io.IOException {
         
         HashMap<String, HashMap<String, Dataset>> db = new HashMap<>();
         

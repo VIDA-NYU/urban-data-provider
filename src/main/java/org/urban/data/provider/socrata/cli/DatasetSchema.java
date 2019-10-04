@@ -32,7 +32,7 @@ public class DatasetSchema implements Command {
         Help.printName(this.name(), "Dataset schema");
         Help.printDir();
         Help.printDomain();
-        Help.printDate("Download date (default: last)");
+        Help.printDate("Download date (default: none)");
         Help.printDataset();
     }
 
@@ -48,7 +48,7 @@ public class DatasetSchema implements Command {
         DB db = args.getDB();
         
         int count = 0;
-        for (Dataset dataset : db.getDownloadedDatasets(args.asQuery())) {
+        for (Dataset dataset : db.getSnapshot(args.asQuery())) {
             if (count > 0) {
                 System.out.println();
             }
