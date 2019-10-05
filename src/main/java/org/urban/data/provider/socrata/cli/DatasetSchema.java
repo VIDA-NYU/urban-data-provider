@@ -24,22 +24,14 @@ import org.urban.data.provider.socrata.db.Dataset;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DatasetSchema implements Command {
+public class DatasetSchema extends CommandImpl implements Command {
 
-    @Override
-    public void help(boolean includeDescription) {
+    public DatasetSchema() {
 
-        Help.printName(this.name(), "Dataset schema");
-        Help.printDir();
-        Help.printDomain();
-        Help.printDate("Download date (default: none)");
-        Help.printDataset();
-    }
-
-    @Override
-    public String name() {
-
-        return "dataset schema";
+        super("dataset schema", "Dataset schema");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_DATE, "Download date (default: none)");
     }
 
     @Override

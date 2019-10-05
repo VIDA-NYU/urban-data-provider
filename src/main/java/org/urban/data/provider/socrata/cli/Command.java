@@ -15,20 +15,21 @@
  */
 package org.urban.data.provider.socrata.cli;
 
+import java.util.HashMap;
+
 /**
  * Module that can be run as a Socrata CLI command.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
 public interface Command {
-   
+
     /**
-     * Print help statement for this command. The command description is only
-     * printed if the respective flag is true.
+     * Long descriptive text for the command.
      * 
-     * @param includeDescription
+     * @return 
      */
-    public void help(boolean includeDescription);
+    public String longDescription();
     
     /**
      * Get the command name.
@@ -37,6 +38,8 @@ public interface Command {
      */
     public String name();
     
+    public HashMap<String, String> parameters();
+    
     /**
      * Run the command for the given set of arguments.
      * 
@@ -44,4 +47,11 @@ public interface Command {
      * @throws java.io.IOException 
      */
     public void run(Args args) throws java.io.IOException;
+
+    /**
+     * Short descriptive name for the command.
+     * 
+     * @return 
+     */
+    public String shortDescription();
 }

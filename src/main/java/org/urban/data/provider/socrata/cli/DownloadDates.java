@@ -26,20 +26,12 @@ import java.util.HashMap;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DownloadDates implements Command {
+public class DownloadDates extends CommandImpl implements Command {
 
 
-    @Override
-    public void help(boolean includeDescription) {
+    public DownloadDates() {
 
-        Help.printName(this.name(), "Download dates");
-        Help.printDir();
-    }
-
-    @Override
-    public String name() {
-
-        return "download dates";
+        super("download dates", "Download dates");
     }
 
     @Override

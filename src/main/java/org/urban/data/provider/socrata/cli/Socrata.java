@@ -44,7 +44,7 @@ public class Socrata {
         private static final Logger LOGGER = Logger
             .getLogger(Socrata.class.getName());
     
-    public static HashMap<String, Command> commandListing() {
+    private static HashMap<String, Command> commandListing() {
 
         HashMap<String, Command> result = new HashMap<>();
         for (Command cmd : COMMANDS) {
@@ -53,17 +53,40 @@ public class Socrata {
         return result;
     }
     
-    public static void printHelp() {
+    private static void printHelp() {
         
         ArrayList<Command> commands = new ArrayList<>(commandListing().values());
         Collections.sort(commands, (cmd1, cmd2) -> (cmd1.name().compareTo(cmd2.name())));
-        System.out.println("Socrata Data Archive - Command line Tool (Version 0.1.1)");
+        Socrata.printProgramName();
         for (Command cmd : commands) {
             System.out.println();
-            cmd.help(false);
+            System.out.println(cmd.name() + ": " + cmd.shortDescription());
         }
     }
     
+    private static void printHelp(Command cmd) {
+        
+        Socrata.printProgramName();
+        System.out.println();
+        System.out.println(cmd.name() + ": " + cmd.shortDescription());
+        
+        String description = cmd.longDescription();
+        if (description != null) {
+            System.out.println();
+            System.out.println(description);
+        }
+        System.out.println();
+        
+        for (String key : cmd.parameters().keySet()) {
+            System.out.println("--" + key + ": " + cmd.parameters().get(key));
+        }
+    }
+    
+    private static void printProgramName() {
+        
+        System.out.println("Socrata Data Archive - Command line Tool (Version 0.1.2)");
+    }
+
     public static void main(String[] arguments) {
 
         if (arguments.length == 0) {
@@ -81,7 +104,7 @@ public class Socrata {
         
         if (args.hasHelp()) {
             if (args.getHelp()) {
-                command.help(true);
+                Socrata.printHelp(command);
                 System.exit(0);
             }
         }

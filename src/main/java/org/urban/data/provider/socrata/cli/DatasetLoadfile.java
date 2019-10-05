@@ -25,17 +25,15 @@ import org.urban.data.provider.socrata.db.Dataset;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DatasetLoadfile implements Command {
+public class DatasetLoadfile extends CommandImpl implements Command {
    
-    @Override
-    public void help(boolean includeDescription) {
+    public DatasetLoadfile() {
 
-        Help.printName(this.name(), "Create load file and statement for dataset");
-        Help.printDir();
-        Help.printDomain();
-        Help.printDataset();
-        Help.printDate("Download date (default: today)");
-        Help.printOutput("Output directory");
+        super("dataset loadfile", "Create load file and statement for dataset");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_DATE, "Download date (default: today)");
+        this.addParameter(Args.PARA_OUTPUT, "Output directory");
     }
 
     @Override

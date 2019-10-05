@@ -28,25 +28,17 @@ import org.urban.data.provider.socrata.db.Dataset;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class ColumnValues implements Command {
+public class ColumnValues extends CommandImpl implements Command {
 
-    @Override
-    public void help(boolean includeDescription) {
+    public ColumnValues() {
 
-        Help.printName(this.name(), "Dataset schema");
-        Help.printDir();
-        Help.printDomain();
-        Help.printDate("Download date (default: last)");
-        Help.printDataset();
-        Help.printColumn();
-        Help.printOrderBy();
-        Help.printReverse();
-    }
-
-    @Override
-    public String name() {
-
-        return "column values";
+        super("column values", "Dataset schema");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATE, "Download date (default: last)");
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_COLUMN);
+        this.addParameter(Args.PARA_ORDERBY);
+        this.addParameter(Args.PARA_REVERSE);
     }
 
     @Override

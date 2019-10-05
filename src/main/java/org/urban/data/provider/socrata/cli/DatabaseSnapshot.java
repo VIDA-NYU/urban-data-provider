@@ -34,23 +34,15 @@ import org.urban.data.provider.socrata.db.DatasetQuery;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DatabaseSnapshot implements Command {
+public class DatabaseSnapshot extends CommandImpl implements Command {
 
-    @Override
-    public void help(boolean includeDescription) {
+    public DatabaseSnapshot() {
 
-        Help.printName(this.name(), "Database snapshot");
-        Help.printDir();
-        Help.printDomain();
-        Help.printDate("Download date (default: last)");
-        Help.printDataset();
-        Help.printStatsOnly();
-    }
-
-    @Override
-    public String name() {
-
-        return "snapshot";
+        super("snapshot", "Database snapshot");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATE, "Download date (default: last)");
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_STATS);
     }
 
     @Override

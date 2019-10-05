@@ -31,31 +31,24 @@ import org.urban.data.provider.socrata.db.DatasetQuery;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DatasetNames implements Command {
+public class DatasetNames extends CommandImpl implements Command {
    
-    @Override
-    public void help(boolean includeDescription) {
+    public DatasetNames() {
 
-        Help.printName(this.name(), "Query catalog file for dataset names");
-        Help.printDir();
-        Help.printDomain();
-        Help.printDataset();
-        Help.printDate("Date for catalog file (default: today)");
-        Help.printOutput("Output file (default: standard output)");
-    }
-
-    @Override
-    public String name() {
-
-        return "dataset names";
+        super("dataset names", "Query catalog file for dataset names");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_DATE, "Date for catalog file (default: today)");
+        this.addParameter(Args.PARA_OUTPUT, "Output file (default: standard output)");
+        this.addParameter(Args.PARA_EXISTING);
     }
 
     @Override
     public void run(Args args) throws java.io.IOException {
         
         DB db = args.getDB();
-        
         String date = args.getDateDefaultLast();
+        boolean existingOnly = args.getExisting();
         
         System.out.println("Dataset names for catalog from " + date);
         
@@ -83,6 +76,11 @@ public class DatasetNames implements Command {
                     date
             );
             if (query.matches(dataset)) {
+                if (existingOnly) {
+                    if (!db.datasetFile(dataset).exists()) {
+                        continue;
+                    }
+                }
                 out.println(tuple.join("\t"));
             }
         }

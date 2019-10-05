@@ -41,6 +41,7 @@ import org.urban.data.provider.socrata.SocrataCatalog;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.DatabaseWriter;
 import org.urban.data.provider.socrata.db.Dataset;
+import org.urban.data.provider.socrata.db.DatasetQuery;
 
 /**
  * Download all datasets from the Socrata API that have been modified since the
@@ -54,7 +55,7 @@ import org.urban.data.provider.socrata.db.Dataset;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DownloadDatasets implements Command {
+public class DownloadDatasets extends CommandImpl implements Command {
     
     private static final Logger LOGGER = Logger
             .getLogger(DownloadDatasets.class.getName());
@@ -123,21 +124,20 @@ public class DownloadDatasets implements Command {
         
     }
 
-    @Override
-    public void help(boolean includeDescription) {
+    public DownloadDatasets() {
 
-        Help.printName(this.name(), "Download datasets that have changed");
-        Help.printDir();
-        Help.printDate("Date for catalog file (default: today)");
+        super("download", "Download datasets that have changed");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_DATE, "Date for catalog file (default: today)");
     }
 
     @Override
-    public String name() {
-
-        return "download";
-    }
-
-    public void run(DB db, String date, int threads) throws java.io.IOException {
+    public void run(Args args) throws IOException {
+        
+        DB db = args.getDB();
+        String date = args.getDateDefaultToday();
+        int threads = args.getThreads();
         
         // Configure the log file
         File logFile = db.logFile(date);
@@ -169,10 +169,15 @@ public class DownloadDatasets implements Command {
         
         ConcurrentLinkedQueue<ResultTuple> downloads = new ConcurrentLinkedQueue<>();
         
+        DatasetQuery query = args.asQuery();
+        
         List<ResultTuple> rs =  new JsonQuery(catalogFile).executeQuery(select, true);
         for (ResultTuple tuple : rs) {
             String domain = tuple.get("domain");
             String dataset = tuple.get("dataset");
+            if (!query.matches(new Dataset(dataset, domain, date))) {
+                continue;
+            }
             Date lastDownload = null;
             if (datasets.containsKey(domain)) {
                 if (datasets.get(domain).containsKey(dataset)) {
@@ -217,41 +222,5 @@ public class DownloadDatasets implements Command {
         }
 
         LOGGER.log(Level.INFO, "DONE {0}", new Date());
-    }
-    
-    @Override
-    public void run(Args args) throws IOException {
-
-        this.run(args.getDB(), args.getDateDefaultToday(), args.getThreads());
-    }
-    
-    private static final String COMMAND = 
-            "Usage:\n" +
-            "  <output-directory>\n" +
-            "  <threads>\n" +
-            "  {<date>}";
-
-    public static void main(String[] args) {
-    
-        if ((args.length < 2) || (args.length > 3)) {
-            System.out.println(COMMAND);
-            System.exit(-1);
-        }
-        
-        File outputDir = new File(args[0]);
-        int threads = Integer.parseInt(args[1]);
-        String dateKey;
-        if (args.length == 3) {
-            dateKey = args[2];
-        } else {
-            dateKey = DB.DF.format(new Date());
-        }
-        
-        try {
-            new DownloadDatasets().run(new DB(outputDir), dateKey, threads);
-        } catch (java.io.IOException ex) {
-            LOGGER.log(Level.SEVERE, "RUN", ex);
-            System.exit(-1);
-        }
     }
 }

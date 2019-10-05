@@ -51,7 +51,7 @@ import org.urban.data.provider.socrata.db.DatasetQuery;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class Parse implements Command {
+public class Parse extends CommandImpl implements Command {
 
     private class DatasetParser implements Runnable {
 
@@ -121,23 +121,21 @@ public class Parse implements Command {
             .getLogger(Parse.class.getName());
     
 
-    @Override
-    public void help(boolean includeDescription) {
+    public Parse() {
 
-        Help.printName(this.name(), "Statistics for downloaded datasets");
-        if (includeDescription) {
-            Help.printDescription(
-                    "Parses downloaded dataset files. For each dataset the number of\n" +
-                    "columns, lines, and rows that were parsed successful is output.\n" +
-                    "If the dataset file fails to parse all three values are -1"
-            );
-        }
-        Help.printDir();
-        Help.printThreads();
-        Help.printDomain();
-        Help.printDate("Stats for files downloaded on this date (default: today)");
-        Help.printDataset();
-        Help.printOutput("Output file (default: standard output)");
+        super(
+                "parse",
+                "Statistics for downloaded datasets",
+                "Parses downloaded dataset files. For each dataset the number of\n" +
+                "columns, lines, and rows that were parsed successful is output.\n" +
+                "If the dataset file fails to parse all three values are -1"
+        );
+        
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_DATE, "Stats for files downloaded on this date (default: today)");
+        this.addParameter(Args.PARA_OUTPUT, "Output file (default: standard output)");
+        this.addParameter(Args.PARA_THREADS);
     }
 
     @Override

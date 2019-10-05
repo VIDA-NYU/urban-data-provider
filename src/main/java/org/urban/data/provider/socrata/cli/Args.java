@@ -54,6 +54,7 @@ public class Args {
     public final static String PARA_DATASET = "dataset";
     public final static String PARA_DATE = "date";
     public final static String PARA_DOMAIN = "domain";
+    public final static String PARA_EXISTING = "existing";
     public final static String PARA_HELP = "help";
     public final static String PARA_HTML = "html";
     public final static String PARA_ORDERBY = "orderby";
@@ -69,6 +70,7 @@ public class Args {
                 PARA_DATASET,
                 PARA_DATE,
                 PARA_DOMAIN,
+                PARA_EXISTING,
                 PARA_HELP,
                 PARA_HTML,
                 PARA_ORDERBY,
@@ -226,6 +228,15 @@ public class Args {
             }
         }
         return null;
+    }
+    
+    public boolean getExisting() {
+        
+        if (_parameters.containsKey(PARA_EXISTING)) {
+            return Boolean.parseBoolean(_parameters.get(PARA_EXISTING));
+        } else {
+            return false;
+        }
     }
     
     public boolean getHelp() {

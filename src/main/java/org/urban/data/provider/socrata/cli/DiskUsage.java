@@ -28,7 +28,7 @@ import org.urban.data.provider.socrata.db.DatasetQuery;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class DiskUsage implements Command {
+public class DiskUsage extends CommandImpl implements Command {
    
     private class DiskUsageStats {
     
@@ -54,22 +54,14 @@ public class DiskUsage implements Command {
         }
     }
 
-    @Override
-    public void help(boolean includeDescription) {
+    public DiskUsage() {
 
-        Help.printName(this.name(), "Disk usage");
-        Help.printDir();
-        Help.printDomain();
-        Help.printDate("Download date (default: all)");
-        Help.printDataset();
+        super("du", "Disk usage");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATASET);
+        this.addParameter(Args.PARA_DATE, "Download date (default: all)");
     }
 
-    @Override
-    public String name() {
-
-        return "du";
-    }
-    
     private DiskUsageStats run(DB db, DatasetQuery query) throws java.io.IOException {
         
         DiskUsageStats stats = new DiskUsageStats();

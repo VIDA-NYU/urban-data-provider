@@ -34,7 +34,7 @@ import org.urban.data.provider.socrata.db.Dataset;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class Clean implements Command {
+public class Clean extends CommandImpl implements Command {
 
     private static final String[] HTML_LABELS = {
         "!DOCTYPE",
@@ -46,15 +46,13 @@ public class Clean implements Command {
         "link"
     };
     
-    @Override
-    public void help(boolean includeDescription) {
+    public Clean() {
 
-        Help.printName(this.name(), "Remove empty datasets and HTML files");
-        Help.printDir();
-        Help.printDomain();
-        Help.printDate("Date of download");
-        Help.printHtml();
-        Help.printReport();
+        super("clean", "Remove empty datasets and HTML files");
+        this.addParameter(Args.PARA_DOMAIN);
+        this.addParameter(Args.PARA_DATE, "Date of download");
+        this.addParameter(Args.PARA_HTML);
+        this.addParameter(Args.PARA_REPORT);
     }
 
     private boolean markForDelete(File file, boolean includeHtml) throws java.io.IOException {
@@ -100,12 +98,6 @@ public class Clean implements Command {
         return false;
     }
     
-    @Override
-    public String name() {
-
-        return "clean";
-    }
-
     @Override
     public void run(Args args) throws java.io.IOException {
 
