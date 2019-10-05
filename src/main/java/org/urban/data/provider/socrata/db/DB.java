@@ -356,7 +356,7 @@ public class DB {
                 CSVFormat.TDF
                         .withFirstRecordAsHeader()
                         .withIgnoreHeaderCase()
-                        .withTrim()
+                        .withIgnoreSurroundingSpaces(false)
         );
     }
     
