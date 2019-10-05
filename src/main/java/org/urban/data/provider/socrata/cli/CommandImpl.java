@@ -56,6 +56,8 @@ public abstract class CommandImpl implements Command {
                 _parameters.put(name, "Unique dataset identifier");
             } else if (name.equals(Args.PARA_DOMAIN)) {
                 _parameters.put(name, "Unique domain name");
+            } else if (name.equals(Args.PARA_EXISTING)) {
+                _parameters.put(name, "Include downloaded datasets only");
             } else if (name.equals(Args.PARA_HTML)) {
                 _parameters.put(name, "Delete (potential) HTML files");
             } else if (name.equals(Args.PARA_ORDERBY)) {
