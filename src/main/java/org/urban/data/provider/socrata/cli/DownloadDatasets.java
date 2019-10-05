@@ -130,6 +130,7 @@ public class DownloadDatasets extends CommandImpl implements Command {
         this.addParameter(Args.PARA_DOMAIN);
         this.addParameter(Args.PARA_DATASET);
         this.addParameter(Args.PARA_DATE, "Date for catalog file (default: today)");
+        this.addParameter(Args.PARA_THREADS);
     }
 
     @Override

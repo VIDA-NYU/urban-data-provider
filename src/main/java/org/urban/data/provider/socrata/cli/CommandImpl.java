@@ -37,7 +37,7 @@ public abstract class CommandImpl implements Command {
         _longDescription = longDescription;
         
         _parameters = new HashMap<>();
-        _parameters.put(Args.ENV_DATABASEDIR, "Base directory for the archive");
+        _parameters.put(Args.PARA_BASEDIR, "Base directory for the archive");
     }
     
     public CommandImpl(String name, String shortDescription) {
@@ -54,7 +54,7 @@ public abstract class CommandImpl implements Command {
                 _parameters.put(name, "Download date");
             } else if (name.equals(Args.PARA_DATASET)) {
                 _parameters.put(name, "Unique dataset identifier");
-            } else if (name.equals(Args.ENV_DOMAIN)) {
+            } else if (name.equals(Args.PARA_DOMAIN)) {
                 _parameters.put(name, "Unique domain name");
             } else if (name.equals(Args.PARA_HTML)) {
                 _parameters.put(name, "Delete (potential) HTML files");
@@ -68,7 +68,7 @@ public abstract class CommandImpl implements Command {
                 _parameters.put(name, "Reverse default output order");
             } else if (name.equals(Args.PARA_STATS)) {
                 _parameters.put(name, "Only output statistics");
-            } else if (name.equals(Args.ENV_THREADS)) {
+            } else if (name.equals(Args.PARA_THREADS)) {
                 _parameters.put(name, "Number of parallel threads used");
             } else{
                 _parameters.put(name, "");

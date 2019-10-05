@@ -20,6 +20,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static org.urban.data.provider.socrata.cli.Args.PARA_BASEDIR;
+import static org.urban.data.provider.socrata.cli.Args.PARA_COLUMN;
+import static org.urban.data.provider.socrata.cli.Args.PARA_DATASET;
+import static org.urban.data.provider.socrata.cli.Args.PARA_DATE;
+import static org.urban.data.provider.socrata.cli.Args.PARA_DOMAIN;
+import static org.urban.data.provider.socrata.cli.Args.PARA_EXISTING;
+import static org.urban.data.provider.socrata.cli.Args.PARA_HELP;
+import static org.urban.data.provider.socrata.cli.Args.PARA_HTML;
+import static org.urban.data.provider.socrata.cli.Args.PARA_ORDERBY;
+import static org.urban.data.provider.socrata.cli.Args.PARA_OUTPUT;
+import static org.urban.data.provider.socrata.cli.Args.PARA_REPORT;
+import static org.urban.data.provider.socrata.cli.Args.PARA_REVERSE;
+import static org.urban.data.provider.socrata.cli.Args.PARA_STATS;
+import static org.urban.data.provider.socrata.cli.Args.PARA_THREADS;
 
 /**
  * Socrata command line interface.
@@ -41,8 +55,24 @@ public class Socrata {
         new Parse()
     };
 
-        private static final Logger LOGGER = Logger
-            .getLogger(Socrata.class.getName());
+    private static final Logger LOGGER = Logger
+        .getLogger(Socrata.class.getName());
+    
+    private static final String[] PARAMETERS = {
+        PARA_BASEDIR,
+        PARA_DOMAIN,
+        PARA_DATASET,
+        PARA_DATE,
+        PARA_COLUMN,
+        PARA_OUTPUT,
+        PARA_EXISTING,
+        PARA_HTML,
+        PARA_ORDERBY,
+        PARA_REPORT,
+        PARA_REVERSE,
+        PARA_STATS,
+        PARA_THREADS
+    };
     
     private static HashMap<String, Command> commandListing() {
 
@@ -58,9 +88,22 @@ public class Socrata {
         ArrayList<Command> commands = new ArrayList<>(commandListing().values());
         Collections.sort(commands, (cmd1, cmd2) -> (cmd1.name().compareTo(cmd2.name())));
         Socrata.printProgramName();
+        System.out.println();
+        
+        int maxLength = 0;
         for (Command cmd : commands) {
-            System.out.println();
-            System.out.println(cmd.name() + ": " + cmd.shortDescription());
+            if (cmd.name().length() > maxLength) {
+                maxLength = cmd.name().length();
+            }
+        }
+        for (Command cmd : commands) {
+            System.out.println(
+                    String.format(
+                            "%1$-" + maxLength + "s : %2$s",
+                            cmd.name(),
+                            cmd.shortDescription()
+                    )
+            );
         }
     }
     
@@ -68,7 +111,22 @@ public class Socrata {
         
         Socrata.printProgramName();
         System.out.println();
-        System.out.println(cmd.name() + ": " + cmd.shortDescription());
+
+        int maxLength = cmd.name().length();
+        for (String key : cmd.parameters().keySet()) {
+            int len = key.length() + 2;
+            if (len > maxLength) {
+                maxLength = len;
+            }
+        }
+        
+        System.out.println(
+                String.format(
+                        "%1$-" + maxLength + "s : %2$s",
+                        cmd.name(),
+                        cmd.shortDescription()
+                )
+        );
         
         String description = cmd.longDescription();
         if (description != null) {
@@ -77,8 +135,16 @@ public class Socrata {
         }
         System.out.println();
         
-        for (String key : cmd.parameters().keySet()) {
-            System.out.println("--" + key + ": " + cmd.parameters().get(key));
+        for (String key : PARAMETERS) {
+            if (!cmd.parameters().containsKey(key)) {
+                continue;
+            }
+            System.out.println(
+                    String.format(
+                            "--%1$-" + (maxLength - 2) + "s : %2$s",
+                            key,
+                            cmd.parameters().get(key))
+            );
         }
     }
     
