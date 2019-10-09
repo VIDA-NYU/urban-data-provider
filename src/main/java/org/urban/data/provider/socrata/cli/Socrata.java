@@ -26,7 +26,6 @@ import static org.urban.data.provider.socrata.cli.Args.PARA_DATASET;
 import static org.urban.data.provider.socrata.cli.Args.PARA_DATE;
 import static org.urban.data.provider.socrata.cli.Args.PARA_DOMAIN;
 import static org.urban.data.provider.socrata.cli.Args.PARA_EXISTING;
-import static org.urban.data.provider.socrata.cli.Args.PARA_HELP;
 import static org.urban.data.provider.socrata.cli.Args.PARA_HTML;
 import static org.urban.data.provider.socrata.cli.Args.PARA_ORDERBY;
 import static org.urban.data.provider.socrata.cli.Args.PARA_OUTPUT;
@@ -44,6 +43,7 @@ public class Socrata {
     
     private static final Command[] COMMANDS = {
         new Clean(),
+        new ColumnFinder(),
         new ColumnValues(),
         new DownloadDates(),
         new DownloadDatasets(),
@@ -73,6 +73,8 @@ public class Socrata {
         PARA_STATS,
         PARA_THREADS
     };
+    
+    private static final String VERSION = "0.1.4";
     
     private static HashMap<String, Command> commandListing() {
 
@@ -150,7 +152,7 @@ public class Socrata {
     
     private static void printProgramName() {
         
-        System.out.println("Socrata Data Archive - Command line Tool (Version 0.1.2)");
+        System.out.println("Socrata Data Archive - Command line Tool (Version " + VERSION + ")");
     }
 
     public static void main(String[] arguments) {

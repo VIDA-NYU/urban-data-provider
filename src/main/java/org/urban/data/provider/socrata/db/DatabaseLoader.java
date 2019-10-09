@@ -127,11 +127,11 @@ public class DatabaseLoader {
         if (term.length() > _valueLengthThreshold) {
             value = value.substring(0, _valueLengthThreshold) + "__" + (truncCount.inc());
         }
-        if (value.contains("'")) {
-            value = value.replace("'", "\\\'");
+        if (value.contains("\'")) {
+            value = value.replaceAll("\'", "\'\'");
         }
         if (value.contains("\\")) {
-            value = value.replace("\\\\", "\\\\\\\\");
+            value = value.replaceAll("\\\\", "\\\\\\\\");
         }
         return value;
     }

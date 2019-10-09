@@ -53,7 +53,15 @@ public class SQLEscapeTest {
     
         String term = "D'LILI BAKERY\\DOWN THE ROAD";
         String value = new DatabaseLoader(null).escapeTerm(term, new Counter());
-        assertEquals("D\\'LILI BAKERY\\DOWN THE ROAD", value);
+        assertEquals("D''LILI BAKERY\\\\DOWN THE ROAD", value);
+    }
+    
+    @Test
+    public void testReplaceBackslash() {
+        
+        String term = "RM    \\\t";
+        String value = new DatabaseLoader(null).escapeTerm(term, new Counter());
+        assertEquals("RM    \\\\\t", value);
     }
     
     @Test

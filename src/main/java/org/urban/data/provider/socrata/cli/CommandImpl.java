@@ -72,6 +72,8 @@ public abstract class CommandImpl implements Command {
                 _parameters.put(name, "Only output statistics");
             } else if (name.equals(Args.PARA_THREADS)) {
                 _parameters.put(name, "Number of parallel threads used");
+            } else if (name.equals(Args.PARA_VALUES)) {
+                _parameters.put(name, "List of values");
             } else{
                 _parameters.put(name, "");
             }

@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import org.urban.data.core.set.StringSet;
 import org.urban.data.core.util.StringHelper;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.DatasetQuery;
@@ -63,6 +64,7 @@ public class Args {
     public final static String PARA_REVERSE = "reverse";
     public final static String PARA_STATS = "stats";
     public final static String PARA_THREADS = "threads";
+    public final static String PARA_VALUES = "values";
     private final static HashSet<String> PARAMETERS = new HashSet<>(
             Arrays.asList(new String[]{
                 PARA_BASEDIR,
@@ -78,7 +80,8 @@ public class Args {
                 PARA_REPORT,
                 PARA_REVERSE,
                 PARA_STATS,
-                PARA_THREADS
+                PARA_THREADS,
+                PARA_VALUES
             })
     );
     
@@ -313,9 +316,15 @@ public class Args {
             return ORDER_BY_VALUE;
         }
     }
+    
     public File getOutput() {
         
         return new File(_parameters.get(PARA_OUTPUT));
+    }
+    
+    public StringSet getValues() {
+        
+        return new StringSet(_parameters.get(PARA_VALUES).split(","));
     }
     
     public boolean hasColumn() {
@@ -346,5 +355,10 @@ public class Args {
     public boolean hasOutput() {
         
         return _parameters.containsKey(PARA_OUTPUT);
+    }
+    
+    public boolean hasValues() {
+        
+        return _parameters.containsKey(PARA_VALUES);
     }
 }
