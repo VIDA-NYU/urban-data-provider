@@ -49,19 +49,19 @@ public class SQLEscapeTest {
     }
 
     @Test
-    public void testEscapeQuotes() {
+    public void testEscapeTerms() {
     
         String term = "D'LILI BAKERY\\DOWN THE ROAD";
         String value = new DatabaseLoader(null).escapeTerm(term, new Counter());
         assertEquals("D''LILI BAKERY\\\\DOWN THE ROAD", value);
-    }
-    
-    @Test
-    public void testReplaceBackslash() {
         
-        String term = "RM    \\\t";
-        String value = new DatabaseLoader(null).escapeTerm(term, new Counter());
+        term = "RM    \\\t";
+        value = new DatabaseLoader(null).escapeTerm(term, new Counter());
         assertEquals("RM    \\\\\t", value);
+        
+        term = "RM    \\\nD'LILI BAKERY\\DOWN THE ROAD";
+        value = new DatabaseLoader(null).escapeTerm(term, new Counter());
+        assertEquals("RM    \\\\ D''LILI BAKERY\\\\DOWN THE ROAD", value);
     }
     
     @Test

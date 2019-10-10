@@ -62,6 +62,10 @@ public class DatabaseLoader {
             schema = new ArrayList<>();
             for (String name : in.getHeaderNames()) {
                 name = DatabaseLoader.replaceSpecialChars(name);
+                // If the name starts with a digit add an underscore
+                if (Character.isDigit(name.charAt(0))) {
+                    name = "_" + name;
+                }
                 schema.add(new ColumnStats(name));
             }            
             for (CSVRecord record : in) {
@@ -132,6 +136,9 @@ public class DatabaseLoader {
         }
         if (value.contains("\\")) {
             value = value.replaceAll("\\\\", "\\\\\\\\");
+        }
+        if (value.contains("\n")) {
+            value = value.replaceAll("\\n", " ");
         }
         return value;
     }
