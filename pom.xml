@@ -62,7 +62,7 @@
                    <archive>
                       <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.urban.data.provider.socrata.cli.Socrata</mainClass>
+                            <mainClass>org.urban.data.provider.socrata.db.DatabaseFileGenerator</mainClass>
                       </manifest>
                    </archive>
                 </configuration>
