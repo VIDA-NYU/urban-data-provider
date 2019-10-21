@@ -15,13 +15,13 @@
  */
 package org.urban.data.provider.socrata;
 
-import com.google.gson.JsonPrimitive;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.io.json.JsonPrimitiveConsumer;
 import org.urban.data.core.util.count.Counter;
 
 /**
@@ -29,8 +29,11 @@ import org.urban.data.core.util.count.Counter;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class ColumnFactory implements JsonPrimitiveConsumer {
+public class ColumnFactory {
    
+    private static final Logger LOGGER = Logger
+            .getLogger(ColumnFactory.class.getName());
+    
     private class ColumnHandler {
         
         private final PrintWriter _out;
@@ -42,17 +45,27 @@ public class ColumnFactory implements JsonPrimitiveConsumer {
             _terms = new HashSet<>();
         }
         
+        public ColumnHandler() {
+            
+            _out = null;
+            _terms = null;
+        }
+        
         public void add(String term) {
             
-            if (!_terms.contains(term)) {
-                _out.println(term);
-                _terms.add(term);
+            if (_out != null) {
+                if (!_terms.contains(term)) {
+                    _out.println(term.replaceAll("\\t", " ").replaceAll("\\n", " "));
+                    _terms.add(term);
+                }
             }
         }
         
         public void close() {
             
-            _out.close();
+            if (_out != null) {
+                _out.close();
+            }
         }
     }
     
@@ -80,31 +93,26 @@ public class ColumnFactory implements JsonPrimitiveConsumer {
         _columns.clear();
     }
     
-    @Override
-    public void consume(String path, JsonPrimitive element) {
+    public void consume(String columnName, String term) {
 
-        if (element.isJsonPrimitive()) {
-            String term = element.getAsString().toUpperCase();
-            if (!_columns.containsKey(path)) {
-                int columnId = _counter.inc();
-                String name = path.substring(path.lastIndexOf("/") + 1);
-                name = name.replaceAll(" ", "_");
-                File outputFile = FileSystem.joinPath(
-                        _outputDir,
-                        columnId + "." + name + ".txt.gz"
-                );
-                ColumnHandler column;
-                try {
-                    column = new ColumnHandler(outputFile);
-                } catch (java.io.IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-                _columns.put(path, column);
+        if (!_columns.containsKey(columnName)) {
+            int columnId = _counter.inc();
+            String name = columnName.replaceAll("[^\\dA-Za-z]", "_");
+            File outputFile = FileSystem.joinPath(
+                    _outputDir,
+                    columnId + "." + name + ".txt.gz"
+            );
+            try {
+                ColumnHandler column = new ColumnHandler(outputFile);
+                _columns.put(columnName, column);
                 column.add(term);
                 _out.println(columnId + "\t" + name + "\t" + _dataset);
-            } else {
-                _columns.get(path).add(term);
+            } catch (java.io.IOException ex) {
+                LOGGER.log(Level.SEVERE, name, ex);
+                _columns.put(columnName, new ColumnHandler());
             }
+        } else {
+            _columns.get(columnName).add(term);
         }
     }
 }

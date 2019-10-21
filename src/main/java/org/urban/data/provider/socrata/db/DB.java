@@ -17,18 +17,16 @@ package org.urban.data.provider.socrata.db;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.util.count.Counter;
+import org.urban.data.provider.socrata.SocrataHelper;
 
 /**
  * Socrata dataset archive interface. Defines the storage location for various
@@ -350,14 +348,7 @@ public class DB {
     
     public CSVParser open(Dataset dataset) throws java.io.IOException {
         
-        InputStream is = FileSystem.openFile(this.datasetFile(dataset));
-        return new CSVParser(
-                new InputStreamReader(is),
-                CSVFormat.TDF
-                        .withFirstRecordAsHeader()
-                        .withIgnoreHeaderCase()
-                        .withIgnoreSurroundingSpaces(false)
-        );
+        return SocrataHelper.tsvParser(this.datasetFile(dataset));
     }
     
     /**
