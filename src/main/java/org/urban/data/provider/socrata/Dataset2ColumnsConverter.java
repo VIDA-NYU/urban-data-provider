@@ -17,6 +17,7 @@ package org.urban.data.provider.socrata;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,7 +25,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.urban.data.core.io.FileListReader;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.util.count.Counter;
 
 /**
  * Convert a set of Socrata dataset files in column files that contain the set
@@ -39,44 +39,52 @@ import org.urban.data.core.util.count.Counter;
  */
 public class Dataset2ColumnsConverter {
     
-    public void convert(File file, ColumnFactory consumer) throws java.io.IOException, java.io.IOException {
+    private final ColumnFactory _columnFactory;
+    
+    public Dataset2ColumnsConverter(
+            File outputDir,
+            PrintWriter out,
+            boolean toUpper
+    ) {
+        _columnFactory = new ColumnFactory(outputDir, out, toUpper);
+    }
+    
+    /**
+     * Convert a list of dataset files into a set of column files.
+     * 
+     * @param files
+     * @param out
+     * @throws java.lang.InterruptedException
+     * @throws java.io.IOException 
+     */
+    public void run(List<File> files) throws java.lang.InterruptedException, java.io.IOException {
 
-        try (CSVParser in = SocrataHelper.tsvParser(file)) {
-            List<String> columnNames = in.getHeaderNames();
-            for (CSVRecord row : in) {
-                for (int iColumn = 0; iColumn < row.size(); iColumn++) {
-                    String term = row.get(iColumn);
-                    if (!term.equals("")) {
-                        consumer.consume(columnNames.get(iColumn), term);
+        for (File file : files) {
+            String dataset;
+            if (file.getName().endsWith(".tsv")) {
+                dataset = file.getName().substring(0, file.getName().length() - 4);
+            } else if (file.getName().endsWith(".tsv.gz")) {
+                dataset = file.getName().substring(0, file.getName().length() - 7);
+            } else {
+                return;
+            }
+            System.out.println(file.getName());
+            try (CSVParser in = SocrataHelper.tsvParser(file)) {
+                List<ColumnHandler> columns = new ArrayList<>();
+                for (String colName : in.getHeaderNames()) {
+                    columns.add(_columnFactory.getHandler(dataset, colName));
+                }
+                for (CSVRecord row : in) {
+                    for (int iColumn = 0; iColumn < row.size(); iColumn++) {
+                        String term = row.get(iColumn);
+                        if (!term.equals("")) {
+                            columns.get(iColumn).add(term);
+                        }
                     }
                 }
-            }
-        }
-    }
-
-    public void run(List<File> files, File columnFile, File outputDir) throws java.lang.InterruptedException, java.io.IOException {
-
-        // Create output directory if it does not exist
-        if (!outputDir.exists()) {
-            outputDir.mkdirs();
-        }
-
-        Counter counter = new Counter(0);
-        try (PrintWriter out = FileSystem.openPrintWriter(columnFile)) {
-            for (File file : files) {
-                String dataset;
-                if (file.getName().endsWith(".tsv")) {
-                    dataset = file.getName().substring(0, file.getName().length() - 4);
-                } else if (file.getName().endsWith(".tsv.gz")) {
-                    dataset = file.getName().substring(0, file.getName().length() - 7);
-                } else {
-                    return;
+                for (ColumnHandler column : columns) {
+                    column.close();
                 }
-                System.out.println(file.getName());
-                ColumnFactory consumer;
-                consumer = new ColumnFactory(dataset, counter, outputDir, out);
-                this.convert(file, consumer);
-                consumer.close();
             }
         }
     }
@@ -85,23 +93,25 @@ public class Dataset2ColumnsConverter {
             "Usage:\n" +
             "  <input-dir>\n" +
             "  <columns-file>\n" +
+            "  <to-upper>\n" +
             "  <output-dir>";
     
     public static void main(String[] args) {
         
-        if (args.length != 3) {
+        if (args.length != 4) {
             System.out.println(COMMAND);
             System.exit(-1);
         }
         
         File inputFile = new File(args[0]);
         File columnFile = new File(args[1]);
-        File outputDir = new File(args[2]);
+        boolean toUpper = Boolean.parseBoolean(args[2]);
+        File outputDir = new File(args[3]);
         
-        try {
+        try (PrintWriter out = FileSystem.openPrintWriter(columnFile)) {
             List<File> files = new FileListReader(new String[]{".csv", ".tsv"})
                     .listFiles(inputFile);
-            new Dataset2ColumnsConverter().run(files, columnFile, outputDir);
+            new Dataset2ColumnsConverter(outputDir, out, toUpper).run(files);
         } catch (java.lang.InterruptedException | java.io.IOException ex) {
             Logger.getGlobal().log(Level.SEVERE, "RUN", ex);
             System.exit(-1);

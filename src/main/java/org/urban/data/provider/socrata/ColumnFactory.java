@@ -17,8 +17,6 @@ package org.urban.data.provider.socrata;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.io.FileSystem;
@@ -34,85 +32,38 @@ public class ColumnFactory {
     private static final Logger LOGGER = Logger
             .getLogger(ColumnFactory.class.getName());
     
-    private class ColumnHandler {
-        
-        private final PrintWriter _out;
-        private final HashSet<String> _terms;
-        
-        public ColumnHandler(File file) throws java.io.IOException {
-            
-            _out = FileSystem.openPrintWriter(file);
-            _terms = new HashSet<>();
-        }
-        
-        public ColumnHandler() {
-            
-            _out = null;
-            _terms = null;
-        }
-        
-        public void add(String term) {
-            
-            if (_out != null) {
-                if (!_terms.contains(term)) {
-                    _out.println(term.replaceAll("\\t", " ").replaceAll("\\n", " "));
-                    _terms.add(term);
-                }
-            }
-        }
-        
-        public void close() {
-            
-            if (_out != null) {
-                _out.close();
-            }
-        }
-    }
-    
     private final Counter _counter;
-    private final HashMap<String, ColumnHandler> _columns;
-    private final String _dataset;
     private final PrintWriter _out;
     private final File _outputDir;
+    private final boolean _toUpper;
     
-    public ColumnFactory(String dataset, Counter counter, File outputDir, PrintWriter out) {
+    public ColumnFactory(File outputDir, PrintWriter out, boolean toUpper) {
         
-        _dataset = dataset;
-        _counter = counter;
         _outputDir = outputDir;
         _out = out;
+        _toUpper = toUpper;
 
-        _columns = new HashMap<>();
-    }
+        _counter = new Counter(0);
 
-    public void close() {
-    
-        for (ColumnHandler column : _columns.values()) {
-            column.close();
-        }
-        _columns.clear();
+        // Create output directory if it does not exist
+        FileSystem.createFolder(outputDir);
     }
     
-    public void consume(String columnName, String term) {
+    public ColumnHandler getHandler(String dataset, String columnName) {
 
-        if (!_columns.containsKey(columnName)) {
-            int columnId = _counter.inc();
-            String name = columnName.replaceAll("[^\\dA-Za-z]", "_");
-            File outputFile = FileSystem.joinPath(
-                    _outputDir,
-                    columnId + "." + name + ".txt.gz"
-            );
-            try {
-                ColumnHandler column = new ColumnHandler(outputFile);
-                _columns.put(columnName, column);
-                column.add(term);
-                _out.println(columnId + "\t" + name + "\t" + _dataset);
-            } catch (java.io.IOException ex) {
-                LOGGER.log(Level.SEVERE, name, ex);
-                _columns.put(columnName, new ColumnHandler());
-            }
-        } else {
-            _columns.get(columnName).add(term);
+        int columnId = _counter.inc();
+        String name = columnName.replaceAll("[^\\dA-Za-z]", "_");
+        File outputFile = FileSystem.joinPath(
+                _outputDir,
+                columnId + "." + name + ".txt.gz"
+        );
+        try {
+            ColumnHandler handler = new ColumnHandler(outputFile, _toUpper);
+            _out.println(columnId + "\t" + name + "\t" + dataset);
+            return handler;
+        } catch (java.io.IOException ex) {
+            LOGGER.log(Level.SEVERE, name, ex);
+            return new ColumnHandler();
         }
     }
 }
