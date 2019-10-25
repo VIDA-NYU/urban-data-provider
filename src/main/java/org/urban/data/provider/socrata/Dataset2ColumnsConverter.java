@@ -53,7 +53,6 @@ public class Dataset2ColumnsConverter {
      * Convert a list of dataset files into a set of column files.
      * 
      * @param files
-     * @param out
      * @throws java.lang.InterruptedException
      * @throws java.io.IOException 
      */

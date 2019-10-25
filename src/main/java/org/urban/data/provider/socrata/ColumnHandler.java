@@ -45,8 +45,13 @@ public class ColumnHandler {
         _toUpper = false;
     }
 
-    public void add(String term) {
+    public void add(String value) {
 
+        String term = value;
+        if (_toUpper) {
+            term = term.toUpperCase();
+        }
+        
         if (_out != null) {
             if (!_terms.containsKey(term)) {
                 _terms.put(term, new Counter(1));
@@ -61,9 +66,6 @@ public class ColumnHandler {
         if (_out != null) {
             for (String key : _terms.keySet()) {
                 String term = key.replaceAll("\\t", " ").replaceAll("\\n", " ");
-                if (_toUpper) {
-                    term = term.toUpperCase();
-                }
                 _out.println(term + "\t" + _terms.get(key).value());
             }
             _out.close();
