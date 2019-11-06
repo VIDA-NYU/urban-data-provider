@@ -16,9 +16,14 @@
 package org.urban.data.provider.socrata.tools;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.constraint.Threshold;
+import org.urban.data.core.util.FormatedBigDecimal;
 
 /**
  *
@@ -31,7 +36,32 @@ public class NGramHistograms {
         ColumnValues col1 = new ColumnValues(file1, threshold);
         ColumnValues col2 = new ColumnValues(file2, threshold);
         
-        col1.jsd(col2);
+        HashSet<String> keys = new HashSet<>(col1.ngrams().keySet());
+        for (String key : col2.ngrams().keySet()) {
+            if (!keys.contains(key)) {
+                keys.add(key);
+            }
+        }
+        ArrayList<String> ngrams = new ArrayList<>(keys);
+        Collections.sort(ngrams);
+        
+        for (String ngram : ngrams) {
+            FormatedBigDecimal v1;
+            if (col1.ngrams().containsKey(ngram)) {
+                v1 = new FormatedBigDecimal(col1.ngrams().get(ngram));
+            } else {
+                v1 = new FormatedBigDecimal(BigDecimal.ZERO);
+            }
+            FormatedBigDecimal v2;
+            if (col2.ngrams().containsKey(ngram)) {
+                v2 = new FormatedBigDecimal(col2.ngrams().get(ngram));
+            } else {
+                v2 = new FormatedBigDecimal(BigDecimal.ZERO);
+            }
+            System.out.println(ngram + "\t" + v1 + "\t" + v2);
+        }
+        
+        System.out.println("JSD: " + new FormatedBigDecimal(col1.jsd(col2)));
     }
     
     private static final String COMMAND = "Usage <file-1> <file-2> <threshold>";

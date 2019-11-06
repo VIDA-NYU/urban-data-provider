@@ -16,14 +16,13 @@
 package org.urban.data.provider.socrata.tools;
 
 import java.io.File;
-import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.urban.data.core.constraint.Threshold;
-import org.urban.data.core.io.FileListReader;
-import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.util.FormatedBigDecimal;
 
 /**
@@ -33,7 +32,7 @@ import org.urban.data.core.util.FormatedBigDecimal;
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
 public class SimilarColumnsQuery {
-    
+        
     private final Threshold _nGramThreshold;
     
     public SimilarColumnsQuery(Threshold threshold) {
@@ -41,67 +40,74 @@ public class SimilarColumnsQuery {
         _nGramThreshold = threshold;
     }
     
-    public void run(
+    public List<File> eval(
             List<File> queryFiles,
             List<File> databaseFiles,
-            PrintWriter out
+            int k
     ) throws java.io.IOException {
         
-        System.out.println("READ " + queryFiles.size() + " FILES");
         
-        List<ColumnValues> query = new ArrayList<>();
+        HashMap<String, ColumnValues> query = new HashMap<>();
+        HashMap<String, LinkedList<ColumnFileScore>> scores = new HashMap<>();
         for (File file : queryFiles) {
-            query.add(new ColumnValues(file, _nGramThreshold));
+            ColumnValues col = new ColumnValues(file, _nGramThreshold);
+            query.put(file.getAbsolutePath(), col);
+            scores.put(col.filePath(), new LinkedList<>());
         }
         
-        System.out.println("\nSTART");
+        System.out.println("QUERY HAS " + query.size() + " OF " + queryFiles.size() + " FILES");
         
         for (File file : databaseFiles) {
-            ColumnValues dbCol = new ColumnValues(file, _nGramThreshold);
-            for (int iColumn = 0; iColumn < query.size(); iColumn++) {
-                ColumnValues qCol = query.get(iColumn);
-                if (!qCol.equals(dbCol)) {
-                    FormatedBigDecimal ji = new FormatedBigDecimal(qCol.ji(dbCol));
-                    FormatedBigDecimal jsd = new FormatedBigDecimal(qCol.jsd(dbCol));
-                    String line = qCol.name() + "\t" + dbCol.name() + "\t" + ji + "\t" + jsd;
-                    out.println(line);
-                    System.out.println(line);
+            if (!query.containsKey(file.getAbsolutePath())) {
+                ColumnValues dbCol = new ColumnValues(file, _nGramThreshold);
+                for (ColumnValues qCol : query.values()) {
+                    BigDecimal ji = qCol.ji(dbCol);
+                    if (ji.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal jsd = BigDecimal.ONE.subtract(qCol.jsd(dbCol));
+                        if (jsd.compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal max = new BigDecimal(Math.max(ji.doubleValue(), jsd.doubleValue()));
+                            scores.get(qCol.filePath()).add(new ColumnFileScore(file, max));
+                            String line = qCol.name() + "\t" + dbCol.name();
+                            line += "\t" + new FormatedBigDecimal(ji);
+                            line += "\t" + new FormatedBigDecimal(jsd);
+                            line += "\t" + new FormatedBigDecimal(max);
+                            System.out.println(line);
+                        }
+                    }
                 }
             }
         }
-    }
-    
-    private static final String COMMAND =
-            "Usage:\n" +
-            "  <query-file(s)>\n" +
-            "  <database-file(s)>\n" +
-            "  <threshold>\n" +
-            "  <output-file>";
-    
-    private static final Logger LOGGER = Logger
-            .getLogger(SimilarColumnsQuery.class.getName());
-
-    public static void main(String[] args) {
-    
-        if (args.length != 4) {
-            System.out.println(COMMAND);
-            System.exit(-1);
+        
+        List<LinkedList<ColumnFileScore>> candidates = new ArrayList<>();
+        for (LinkedList<ColumnFileScore> score : scores.values()) {
+            if (!score.isEmpty()) {
+                Collections.sort(score);
+                Collections.reverse(score);
+                candidates.add(score);
+            }
         }
         
-        File queryFileOrDir = new File(args[0]);
-        File databaseFileOrDir = new File(args[1]);
-        Threshold threshold = Threshold.getConstraint(args[2]);
-        File outputFile = new File(args[3]);
-        
-        try (PrintWriter out = FileSystem.openPrintWriter(outputFile)) {
-            new SimilarColumnsQuery(threshold).run(
-                    new FileListReader(".txt").listFiles(queryFileOrDir),
-                    new FileListReader(".txt").listFiles(databaseFileOrDir),
-                    out
-            );
-        } catch (java.io.IOException ex) {
-            LOGGER.log(Level.SEVERE, "RUN", ex);
-            System.exit(-1);
+        HashMap<String, File> result = new HashMap<>();
+        int index = 0;
+        while ((!candidates.isEmpty()) && ((result.size() < k))) {
+            LinkedList<ColumnFileScore> candScores = candidates.get(index);
+            ColumnFileScore score = candScores.pop();
+            String key = score.file().getAbsolutePath();
+            if (!result.containsKey(key)) {
+                result.put(key, score.file());
+                if (result.size() >= k) {
+                    break;
+                }
+            }
+            if (candScores.isEmpty()) {
+                candidates.remove(index);
+            } else {
+                index++;
+            }
+            if (index >= candidates.size()) {
+                index = 0;
+            }
         }
+        return new ArrayList<>(result.values());
     }
 }

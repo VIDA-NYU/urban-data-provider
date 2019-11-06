@@ -15,25 +15,25 @@
  */
 package org.urban.data.provider.socrata.tools;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.constraint.Threshold;
 import org.urban.data.core.io.FileListReader;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.util.StringHelper;
+import org.urban.data.core.util.FormatedBigDecimal;
 
 /**
- * Compute Top k similar columns.
+ * Compute Top k similar columns based on ngrams and Jensen-Shannon Similarity.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class TopKSimilarColumnsPrinter {
+public class TopKJSDColumnsPrinter {
     
     public void run(
             File queryFile,
@@ -45,48 +45,26 @@ public class TopKSimilarColumnsPrinter {
         
         System.out.println("DATABASE HAS " + database.size() + " COLUMNS");
         
-        HashMap<String, List<File>> queries = new HashMap<>();
-        
-        try (BufferedReader in = FileSystem.openReader(queryFile)) {
-            boolean done = false;
-            while (!done) {
-                String headline = in.readLine();
-                if (headline == null) {
-                    done = true;
-                } else {
-                    in.readLine();
-                    List<File> queryFiles = new ArrayList<>();
-                    String line;
-                    while ((line = in.readLine()) != null) {
-                        if (line.trim().equals("")) {
-                            break;
-                        } else {
-                            queryFiles.add(new File(line));
-                        }
-                    }
-                    queries.put(headline, queryFiles);
+        ColumnValues query = new ColumnValues(queryFile, threshold);
+
+        List<ColumnFileScore> scores = new ArrayList<>();
+        for (File file : database) {
+            if (!queryFile.getAbsolutePath().equals(file.getAbsolutePath())) {
+                ColumnValues dbCol = new ColumnValues(file, threshold);
+                BigDecimal jsd = BigDecimal.ONE.subtract(query.jsd(dbCol));
+                if (jsd.compareTo(BigDecimal.ZERO) > 0) {
+                    scores.add(new ColumnFileScore(file, jsd));
                 }
             }
         }
         
-        for (String headline : queries.keySet()) {
-            out.println(headline);
-            out.println(StringHelper.repeat("=", headline.length()));
-            System.out.println(headline);
-            System.out.println(StringHelper.repeat("=", headline.length()));
-            List<File> query = queries.get(headline);
-            for (File file : query) {
-                System.out.println(file.getName());
-                out.println(file.getName());
-            }
-            System.out.println();
-            out.println();
-            for (File file : new SimilarColumnsQuery(threshold).eval(query, database, k)) {
-                System.out.println(file.getName());
-                out.println(file.getName());
-            }
-            System.out.println();
-            out.println();
+        Collections.sort(scores);
+        Collections.reverse(scores);
+        
+        for (int iRank = 0; iRank < Math.min(scores.size(), k); iRank++) {
+            ColumnFileScore score = scores.get(iRank);
+            System.out.println(score.file().getName() + "\t" + new FormatedBigDecimal(score.value()));
+            out.println(score.file().getName() + "\t" + new FormatedBigDecimal(score.value()));
         }
     }
     
@@ -115,7 +93,7 @@ public class TopKSimilarColumnsPrinter {
         File outputFile = new File(args[4]);
         
         try (PrintWriter out = FileSystem.openPrintWriter(outputFile)) {
-            new TopKSimilarColumnsPrinter().run(
+            new TopKJSDColumnsPrinter().run(
                     queryFile,
                     new FileListReader(".txt").listFiles(databaseFile),
                     threshold,
