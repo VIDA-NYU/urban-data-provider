@@ -62,7 +62,7 @@
                    <archive>
                       <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.urban.data.provider.socrata.tools.CopyBigDataColumnFiles</mainClass>
+                            <mainClass>org.urban.data.provider.socrata.Dataset2ColumnsConverter</mainClass>
                       </manifest>
                    </archive>
                 </configuration>

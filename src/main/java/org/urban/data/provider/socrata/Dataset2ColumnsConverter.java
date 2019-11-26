@@ -58,6 +58,7 @@ public class Dataset2ColumnsConverter {
      */
     public void run(List<File> files) throws java.lang.InterruptedException, java.io.IOException {
 
+        int count = 0;
         for (File file : files) {
             String dataset;
             if (file.getName().endsWith(".tsv")) {
@@ -67,7 +68,7 @@ public class Dataset2ColumnsConverter {
             } else {
                 return;
             }
-            System.out.println(file.getName());
+            System.out.println((++count) + " of " + files.size() + ": " + file.getName());
             try (CSVParser in = SocrataHelper.tsvParser(file)) {
                 List<ColumnHandler> columns = new ArrayList<>();
                 for (String colName : in.getHeaderNames()) {
@@ -97,6 +98,8 @@ public class Dataset2ColumnsConverter {
     
     public static void main(String[] args) {
         
+        System.out.println("Convert Datasets to Columns (Version 0.1.0)");
+
         if (args.length != 4) {
             System.out.println(COMMAND);
             System.exit(-1);
