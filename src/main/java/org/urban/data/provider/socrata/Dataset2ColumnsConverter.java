@@ -53,10 +53,9 @@ public class Dataset2ColumnsConverter {
      * Convert a list of dataset files into a set of column files.
      * 
      * @param files
-     * @throws java.lang.InterruptedException
      * @throws java.io.IOException 
      */
-    public void run(List<File> files) throws java.lang.InterruptedException, java.io.IOException {
+    public void run(List<File> files) throws java.io.IOException {
 
         int count = 0;
         for (File file : files) {
@@ -114,7 +113,7 @@ public class Dataset2ColumnsConverter {
             List<File> files = new FileListReader(new String[]{".csv", ".tsv"})
                     .listFiles(inputFile);
             new Dataset2ColumnsConverter(outputDir, out, toUpper).run(files);
-        } catch (java.lang.InterruptedException | java.io.IOException ex) {
+        } catch (java.io.IOException ex) {
             Logger.getGlobal().log(Level.SEVERE, "RUN", ex);
             System.exit(-1);
         }

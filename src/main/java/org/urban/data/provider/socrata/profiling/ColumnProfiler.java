@@ -21,7 +21,7 @@ import org.urban.data.core.util.count.Counter;
 
 /**
  * Keep track of distinct columns values, based on their type. Maintains a
- * frequency count for each values.
+ * frequency count for each value.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
@@ -41,7 +41,7 @@ public class ColumnProfiler {
         _name = name;
     }
     
-    public void add(String term) {
+    public Value add(String term, int count) {
         
         if (term == null) {
             _emptyCells++;
@@ -52,39 +52,46 @@ public class ColumnProfiler {
             if (value.isDate()) {
                 Long key = value.getAsLong();
                 if (_dateValues.containsKey(key)) {
-                    _dateValues.get(key).inc();
+                    _dateValues.get(key).inc(count);
                 } else {
-                    _dateValues.put(key, new Counter(1));
+                    _dateValues.put(key, new Counter(count));
                 }
             } else if (value.isDecimal()) {
                 BigDecimal key = value.getAsDecimal();
                 if (_decimalValues.containsKey(key)) {
-                    _decimalValues.get(key).inc();
+                    _decimalValues.get(key).inc(count);
                 } else {
-                    _decimalValues.put(key, new Counter(1));
+                    _decimalValues.put(key, new Counter(count));
                 }
             } else if (value.isInt()) {
                 Integer key = value.getAsInt();
                 if (_intValues.containsKey(key)) {
-                    _intValues.get(key).inc();
+                    _intValues.get(key).inc(count);
                 } else {
-                    _intValues.put(key, new Counter(1));
+                    _intValues.put(key, new Counter(count));
                 }
             } else if (value.isLong()) {
                 Long key = value.getAsLong();
                 if (_longValues.containsKey(key)) {
-                    _longValues.get(key).inc();
+                    _longValues.get(key).inc(count);
                 } else {
-                    _longValues.put(key, new Counter(1));
+                    _longValues.put(key, new Counter(count));
                 }
             } else {
                 if (_textValues.containsKey(term)) {
-                    _textValues.get(term).inc();
+                    _textValues.get(term).inc(count);
                 } else {
-                    _textValues.put(term, new Counter(1));
+                    _textValues.put(term, new Counter(count));
                 }
             }
+            return value;
         }
+        return null;
+    }
+    
+    public void add(String term) {
+        
+        this.add(term, 1);
     }
     
     public int distinctDateValues() {
