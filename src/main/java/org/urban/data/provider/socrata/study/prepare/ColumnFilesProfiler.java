@@ -18,11 +18,14 @@ package org.urban.data.provider.socrata.study.prepare;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.provider.socrata.profiling.ColumnProfiler;
+import org.urban.data.core.io.SynchronizedWriter;
 
 /**
  * Count values and determine data types for all columns.
@@ -33,85 +36,68 @@ public class ColumnFilesProfiler {
    
     private static final String COMMAND =
             "Usage:\n" +
-            "  <base-directory>";
-    
-    public void profile(File columnFile, int columnId, PrintWriter out) throws java.io.IOException {
-        
-        if (!columnFile.isFile()) {
-            System.out.println("File not found " + columnFile.getAbsolutePath());
-            return;
-        }
-        
-        ColumnProfiler profiler = new ColumnProfiler("default");
-        HashSet<String> upper = new HashSet<>();
-        
-        try (BufferedReader in = FileSystem.openReader(columnFile)) {
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] tokens = line.split("\t");
-                String term = tokens[0];
-                int count = Integer.parseInt(tokens[0]);
-                profiler.add(term, count);
-                String termUpper = term.toUpperCase();
-                if (!upper.contains(termUpper)) {
-                    upper.add(termUpper);
-                }
-            }
-        }
-        
-        out.println(
-                columnId + "\t" +
-                profiler.distinctValues() + "\t" +
-                upper.size() + "\t" +
-                profiler.distinctDateValues() + "\t" +
-                profiler.distinctDecimalValues() + "\t" +
-                profiler.distinctIntValues() + "\t" +
-                profiler.distinctLongValues() + "\t" +
-                profiler.distinctTextValues()
-        );
-    }
+            "  <base-directory>\n" +
+            "  <threads>\n" +
+            "  <output-file>";
     
     private static final Logger LOGGER = Logger
             .getLogger(ColumnFilesProfiler.class.getName());
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Column Files Profiler");
+        System.out.println("Socrata Data Study - Column Files Profiler - 0.1.1");
     
-        if (args.length != 1) {
+        if (args.length != 3) {
             System.out.println(COMMAND);
             System.exit(-1);
         }
         
         File baseDir = new File(args[0]);
+        int threads = Integer.parseInt(args[1]);
+        File outputFile = new File(args[2]);
+        
+        ConcurrentLinkedQueue<ColumnFile> files = new ConcurrentLinkedQueue<>();
         
         for (File directory : baseDir.listFiles()) {
             if (directory.isDirectory()) {
                 File columnsDir = FileSystem.joinPath(directory, "columns");
                 File columnsFile = FileSystem.joinPath(directory, "columns.tsv");
                 if ((columnsDir.isDirectory()) && (columnsFile.isFile())) {
-                    File outputFile = FileSystem.joinPath(directory, "column-stats.tsv");
-                    try (
-                            BufferedReader in = FileSystem.openReader(columnsFile);
-                            PrintWriter out = FileSystem.openPrintWriter(outputFile)
-                        ) {
+                    try (BufferedReader in = FileSystem.openReader(columnsFile)) {
                         String line;
                         while ((line = in.readLine()) != null) {
                             String[] tokens = line.split("\t");
                             int columnId = Integer.parseInt(tokens[0]);
-                            String name = tokens[1];
-                            String filename = columnId + "." + name + ".txt.gz";
-                            new ColumnFilesProfiler().profile(
-                                    FileSystem.joinPath(columnsDir, filename),
+                            String dataset = tokens[1];
+                            String filename = columnId + "." + ".txt.gz";
+                            ColumnFile column = new ColumnFile(
                                     columnId,
-                                    out
+                                    dataset,
+                                    FileSystem.joinPath(columnsDir, filename)
                             );
+                            files.add(column);
                         }
                     } catch (java.io.IOException ex) {
-                        LOGGER.log(Level.SEVERE, "RUN", ex);
+                        LOGGER.log(Level.SEVERE, columnsFile.getAbsolutePath(), ex);
+                        System.exit(-1);
                     }
                 }
             }
+        }
+        
+        System.out.println("Start with " + files.size() + " files");
+        
+        try (PrintWriter out = FileSystem.openPrintWriter(outputFile)) {
+            SynchronizedWriter writer = new SynchronizedWriter(out);
+            ExecutorService es = Executors.newCachedThreadPool();
+            for (int iThread = 0; iThread < threads; iThread++) {
+                es.execute(new ProfilerTask(iThread, files, writer));
+            }
+            es.shutdown();
+            es.awaitTermination(threads, TimeUnit.DAYS);
+        } catch (java.lang.InterruptedException | java.io.IOException ex) {
+            LOGGER.log(Level.SEVERE, outputFile.getAbsolutePath(), ex);
+            System.exit(-1);
         }
     }
 }

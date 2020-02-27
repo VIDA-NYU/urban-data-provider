@@ -52,7 +52,7 @@ public class ColumnFactory {
         String name = columnName.replaceAll("[^\\dA-Za-z]", "_");
         File outputFile = FileSystem.joinPath(
                 _outputDir,
-                columnId + "." + name + ".txt.gz"
+                columnId + ".txt.gz"
         );
         try {
             ColumnHandler handler = new ColumnHandler(

@@ -28,6 +28,7 @@ public abstract class Value {
     public enum DataType {
         Date,
         Decimal,
+        GeoPoint,
         Integer,
         Long,
         Text
@@ -56,6 +57,11 @@ public abstract class Value {
         return _type.equals(DataType.Decimal);
     }
 
+    public boolean isGeoPoint() {
+        
+        return _type.equals(DataType.GeoPoint);
+    }
+    
     public boolean isInt() {
         
         return _type.equals(DataType.Integer);

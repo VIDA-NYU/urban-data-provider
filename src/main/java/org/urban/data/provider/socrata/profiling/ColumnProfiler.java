@@ -30,6 +30,7 @@ public class ColumnProfiler {
     private final HashMap<Long, Counter> _dateValues = new HashMap<>();
     private final HashMap<BigDecimal, Counter> _decimalValues = new HashMap<>();
     private int _emptyCells = 0;
+    private final HashMap<String, Counter> _geoValues = new HashMap<>();
     private final HashMap<Integer, Counter> _intValues = new HashMap<>();
     private final HashMap<Long, Counter> _longValues = new HashMap<>();
     private final String _name;
@@ -39,6 +40,11 @@ public class ColumnProfiler {
     public ColumnProfiler(String name) {
         
         _name = name;
+    }
+    
+    public ColumnProfiler() {
+        
+        this("");
     }
     
     public Value add(String term, int count) {
@@ -77,6 +83,12 @@ public class ColumnProfiler {
                 } else {
                     _longValues.put(key, new Counter(count));
                 }
+            } else if (value.isGeoPoint()) {
+                if (_geoValues.containsKey(term)) {
+                    _geoValues.get(term).inc(count);
+                } else {
+                    _geoValues.put(term, new Counter(count));
+                }
             } else {
                 if (_textValues.containsKey(term)) {
                     _textValues.get(term).inc(count);
@@ -104,6 +116,11 @@ public class ColumnProfiler {
         return  _decimalValues.size();
     }
     
+    public int distinctGeoValues() {
+        
+        return _geoValues.size();
+    }
+    
     public int distinctIntValues() {
         
         return _intValues.size();
@@ -124,6 +141,7 @@ public class ColumnProfiler {
         int result = 0;
         result += this.distinctDateValues();
         result += this.distinctDecimalValues();
+        result += this.distinctGeoValues();
         result += this.distinctIntValues();
         result += this.distinctLongValues();
         result += this.distinctTextValues();
@@ -153,6 +171,9 @@ public class ColumnProfiler {
             result += count.value();
         }
         for (Counter count : _longValues.values()) {
+            result += count.value();
+        }
+        for (Counter count : _geoValues.values()) {
             result += count.value();
         }
         for (Counter count : _textValues.values()) {

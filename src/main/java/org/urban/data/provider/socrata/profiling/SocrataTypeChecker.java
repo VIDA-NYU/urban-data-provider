@@ -68,6 +68,10 @@ public class SocrataTypeChecker {
         } catch (java.lang.NumberFormatException ex) {
         }
         
+        // Next attempt is a Geo Point
+        if (GeoPointValue.isGeoPoint(value)) {
+            return new GeoPointValue(value);
+        }
         for (SimpleDateChecker dateChecker : _dateCheckers) {
             DateValue date = dateChecker.getValue(value);
             if (date != null) {

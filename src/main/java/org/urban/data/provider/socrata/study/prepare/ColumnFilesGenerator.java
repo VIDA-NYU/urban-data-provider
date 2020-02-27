@@ -45,7 +45,7 @@ public class ColumnFilesGenerator {
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Column Files Generator - 0.1.2");
+        System.out.println("Socrata Data Study - Column Files Generator - 0.1.4");
         
         if (args.length != 4) {
             System.out.println(COMMAND);
@@ -55,7 +55,7 @@ public class ColumnFilesGenerator {
         File baseDir = new File(args[0]);
         File domainNamesFile = new File(args[1]);
         int runIndex = Integer.parseInt(args[2]);
-        int step = Integer.parseInt(args[2]);
+        int step = Integer.parseInt(args[3]);
         
         List<String> domains = new ArrayList<>();
         try (BufferedReader in = FileSystem.openReader(domainNamesFile)) {

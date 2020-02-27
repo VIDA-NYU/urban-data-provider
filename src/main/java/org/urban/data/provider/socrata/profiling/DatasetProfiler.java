@@ -48,14 +48,15 @@ public class DatasetProfiler {
         
         for (ColumnProfiler column : columns) {
             System.out.println(column.name());
-            System.out.println("  NON-EMPTY CELLS : " + column.nonEmptyCells());
-            System.out.println("  EMPTY CELLS     : " + column.emptyCells());
-            System.out.println("  DISTINCT DATES  : " + column.distinctDateValues());
-            System.out.println("  DISTINCT DECIMAL: " + column.distinctDecimalValues());
-            System.out.println("  DISTINCT INTEGER: " + column.distinctIntValues());
-            System.out.println("  DISTINCT LONG   : " + column.distinctLongValues());
-            System.out.println("  DISTINCT TEXT   : " + column.distinctTextValues());
-            System.out.println("  DISTINCT VALUES : " + column.distinctValues());
+            System.out.println("  NON-EMPTY CELLS    : " + column.nonEmptyCells());
+            System.out.println("  EMPTY CELLS        : " + column.emptyCells());
+            System.out.println("  DISTINCT DATES     : " + column.distinctDateValues());
+            System.out.println("  DISTINCT DECIMAL   : " + column.distinctDecimalValues());
+            System.out.println("  DISTINCT GEO POINTS: " + column.distinctGeoValues());
+            System.out.println("  DISTINCT INTEGER   : " + column.distinctIntValues());
+            System.out.println("  DISTINCT LONG      : " + column.distinctLongValues());
+            System.out.println("  DISTINCT TEXT      : " + column.distinctTextValues());
+            System.out.println("  DISTINCT VALUES    : " + column.distinctValues());
             System.out.println();
         }
     }
