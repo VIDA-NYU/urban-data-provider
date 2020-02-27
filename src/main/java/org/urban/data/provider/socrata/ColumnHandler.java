@@ -27,19 +27,31 @@ import org.urban.data.core.util.count.Counter;
  */
 public class ColumnHandler {
     
+    private final int _columnId;
+    private final String _columnName;
     private final PrintWriter _out;
     private final HashMap<String, Counter> _terms;
+    private int _totalCount = 0;
     private final boolean _toUpper;
-
-    public ColumnHandler(File file, boolean toUpper) throws java.io.IOException {
+    
+    public ColumnHandler(
+            File file,
+            int columnId,
+            String columnName,
+            boolean toUpper
+    ) throws java.io.IOException {
 
         _out = FileSystem.openPrintWriter(file);
+        _columnId = columnId;
+        _columnName = columnName;
         _terms = new HashMap<>();
         _toUpper = toUpper;
     }
 
     public ColumnHandler() {
 
+        _columnId = -1;
+        _columnName = null;
         _out = null;
         _terms = null;
         _toUpper = false;
@@ -59,6 +71,7 @@ public class ColumnHandler {
                 _terms.get(term).inc();
             }
         }
+        _totalCount++;
     }
 
     public void close() {
@@ -70,5 +83,25 @@ public class ColumnHandler {
             }
             _out.close();
         }
+    }
+    
+    public int distinctCount() {
+        
+        return _terms.size();
+    }
+    
+    public int id() {
+        
+        return _columnId;
+    }
+    
+    public String name() {
+        
+        return _columnName;
+    }
+    
+    public int totalCount() {
+        
+        return _totalCount;
     }
 }

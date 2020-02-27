@@ -15,8 +15,10 @@
  */
 package org.urban.data.provider.socrata.study.prepare;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,30 +35,50 @@ public class ColumnFilesGenerator {
    
     private static final String COMMAND =
             "Usage:\n" +
-            "  <base-directory>";
+            "  <base-directory>\n" +
+            "  <domain-names-file>\n" +
+            "  <run-index>\n" +
+            "  <step>";
     
     private static final Logger LOGGER = Logger
             .getLogger(ColumnFilesGenerator.class.getName());
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Column Files Generator");
+        System.out.println("Socrata Data Study - Column Files Generator - 0.1.2");
         
-        if (args.length != 1) {
+        if (args.length != 4) {
             System.out.println(COMMAND);
             System.exit(-1);
         }
         
         File baseDir = new File(args[0]);
+        File domainNamesFile = new File(args[1]);
+        int runIndex = Integer.parseInt(args[2]);
+        int step = Integer.parseInt(args[2]);
         
-        for (File directory : baseDir.listFiles()) {
-            if (directory.isDirectory()) {
-                File tsvDir = FileSystem.joinPath(directory, "tsv");
+        List<String> domains = new ArrayList<>();
+        try (BufferedReader in = FileSystem.openReader(domainNamesFile)) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                domains.add(line);
+            }
+        } catch (java.io.IOException ex) {
+            LOGGER.log(Level.SEVERE, "LOAD", ex);
+            System.exit(-1);
+        }
+        
+        int domainCount = 0;
+        for (int iDomain = runIndex; iDomain < domains.size(); iDomain += step) {
+            String domain = domains.get(iDomain);
+            File domainDir = FileSystem.joinPath(baseDir, domain);
+            if (domainDir.isDirectory()) {
+                File tsvDir = FileSystem.joinPath(domainDir, "tsv");
                 if (tsvDir.isDirectory()) {
-                    System.out.println("Domain " + directory.getName());
-                    File columnsDir = FileSystem.joinPath(directory, "columns");
-                    File columnsFile = FileSystem.joinPath(directory, "columns.tsv");
-                    FileSystem.createFolder(columnsDir);
+                    System.out.println("Domain " + domain + " (" + (++domainCount + ")"));
+                    File columnsDir = FileSystem.joinPath(domainDir, "columns");
+                    File columnsFile = FileSystem.joinPath(domainDir, "columns.tsv");
+                    createEmptyFolder(columnsDir);
                     try (PrintWriter out = FileSystem.openPrintWriter(columnsFile)) {
                         List<File> files = new FileListReader(new String[]{".tsv"})
                                 .listFiles(tsvDir);
@@ -66,6 +88,17 @@ public class ColumnFilesGenerator {
                         LOGGER.log(Level.SEVERE, "RUN", ex);
                     }
                 }
+            }
+        }
+    }
+    
+    private static void createEmptyFolder(File dir) {
+        
+        if (!dir.exists()) {
+            dir.mkdirs();
+        } else {
+            for (File file : dir.listFiles()) {
+                file.delete();
             }
         }
     }

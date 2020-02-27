@@ -16,7 +16,6 @@
 package org.urban.data.provider.socrata;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.io.FileSystem;
@@ -33,14 +32,12 @@ public class ColumnFactory {
             .getLogger(ColumnFactory.class.getName());
     
     private final Counter _counter;
-    private final PrintWriter _out;
     private final File _outputDir;
     private final boolean _toUpper;
     
-    public ColumnFactory(File outputDir, PrintWriter out, boolean toUpper) {
+    public ColumnFactory(File outputDir, boolean toUpper) {
         
         _outputDir = outputDir;
-        _out = out;
         _toUpper = toUpper;
 
         _counter = new Counter(0);
@@ -58,8 +55,12 @@ public class ColumnFactory {
                 columnId + "." + name + ".txt.gz"
         );
         try {
-            ColumnHandler handler = new ColumnHandler(outputFile, _toUpper);
-            _out.println(columnId + "\t" + name + "\t" + dataset);
+            ColumnHandler handler = new ColumnHandler(
+                    outputFile,
+                    columnId,
+                    columnName,
+                    _toUpper
+            );
             return handler;
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, name, ex);

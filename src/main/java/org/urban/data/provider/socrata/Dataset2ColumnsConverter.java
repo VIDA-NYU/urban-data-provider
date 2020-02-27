@@ -40,13 +40,16 @@ import org.urban.data.core.io.FileSystem;
 public class Dataset2ColumnsConverter {
     
     private final ColumnFactory _columnFactory;
+    private final PrintWriter _out;
     
     public Dataset2ColumnsConverter(
             File outputDir,
             PrintWriter out,
             boolean toUpper
     ) {
-        _columnFactory = new ColumnFactory(outputDir, out, toUpper);
+        _out = out;
+        
+        _columnFactory = new ColumnFactory(outputDir, toUpper);
     }
     
     /**
@@ -73,6 +76,7 @@ public class Dataset2ColumnsConverter {
                 for (String colName : in.getHeaderNames()) {
                     columns.add(_columnFactory.getHandler(dataset, colName));
                 }
+                int rowCount = 0;
                 for (CSVRecord row : in) {
                     for (int iColumn = 0; iColumn < row.size(); iColumn++) {
                         String term = row.get(iColumn);
@@ -80,9 +84,18 @@ public class Dataset2ColumnsConverter {
                             columns.get(iColumn).add(term);
                         }
                     }
+                    rowCount++;
                 }
                 for (ColumnHandler column : columns) {
                     column.close();
+                    _out.println(
+                            column.id() + "\t" +
+                            dataset + "\t" +
+                            column.name() + "\t" +
+                            column.distinctCount() + "\t" +
+                            column.totalCount() + "\t" +
+                            rowCount
+                    );
                 }
             }
         }
