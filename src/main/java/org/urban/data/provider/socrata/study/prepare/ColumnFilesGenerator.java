@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.io.FileListReader;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.provider.socrata.Dataset2ColumnsConverter;
+import org.urban.data.provider.socrata.parser.Dataset2ColumnsConverter;
 
 /**
  * Generate column files for all datasets in the study.
@@ -45,7 +45,7 @@ public class ColumnFilesGenerator {
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Column Files Generator - 0.1.4");
+        System.out.println("Socrata Data Study - Column Files Generator - 0.1.5");
         
         if (args.length != 4) {
             System.out.println(COMMAND);

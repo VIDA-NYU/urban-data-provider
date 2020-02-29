@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata;
+package org.urban.data.provider.socrata.parser;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -25,7 +25,7 @@ import org.urban.data.core.util.count.Counter;
  *
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class ColumnHandler {
+public class ValueSetIndex implements ColumnHandler {
     
     private final int _columnId;
     private final String _columnName;
@@ -34,7 +34,7 @@ public class ColumnHandler {
     private int _totalCount = 0;
     private final boolean _toUpper;
     
-    public ColumnHandler(
+    public ValueSetIndex(
             File file,
             int columnId,
             String columnName,
@@ -48,15 +48,7 @@ public class ColumnHandler {
         _toUpper = toUpper;
     }
 
-    public ColumnHandler() {
-
-        _columnId = -1;
-        _columnName = null;
-        _out = null;
-        _terms = null;
-        _toUpper = false;
-    }
-
+    @Override
     public void add(String value) {
 
         String term = value;
@@ -64,25 +56,12 @@ public class ColumnHandler {
             term = term.toUpperCase();
         }
         
-        if (_out != null) {
-            if (!_terms.containsKey(term)) {
-                _terms.put(term, new Counter(1));
-            } else {
-                _terms.get(term).inc();
-            }
+        if (!_terms.containsKey(term)) {
+            _terms.put(term, new Counter(1));
+        } else {
+            _terms.get(term).inc();
         }
         _totalCount++;
-    }
-
-    public void close() {
-
-        if (_out != null) {
-            for (String key : _terms.keySet()) {
-                String term = key.replaceAll("\\t", " ").replaceAll("\\n", " ");
-                _out.println(term + "\t" + _terms.get(key).value());
-            }
-            _out.close();
-        }
     }
     
     public int distinctCount() {
@@ -90,11 +69,13 @@ public class ColumnHandler {
         return _terms.size();
     }
     
+    @Override
     public int id() {
         
         return _columnId;
     }
     
+    @Override
     public String name() {
         
         return _columnName;
@@ -103,5 +84,17 @@ public class ColumnHandler {
     public int totalCount() {
         
         return _totalCount;
+    }
+
+    @Override
+    public ColumnStats write() {
+
+        for (String key : _terms.keySet()) {
+            String term = key.replaceAll("\\t", " ").replaceAll("\\n", " ");
+            _out.println(term + "\t" + _terms.get(key).value());
+        }
+        _out.close();
+        
+        return new ColumnStats(this.distinctCount(), this.totalCount());
     }
 }

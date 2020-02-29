@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata;
+package org.urban.data.provider.socrata.parser;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -23,8 +23,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.urban.data.core.io.FileListReader;
 import org.urban.data.core.io.FileSystem;
+import org.urban.data.core.util.count.Counter;
+import org.urban.data.provider.socrata.SocrataHelper;
 
 /**
  * Convert a set of Socrata dataset files in column files that contain the set
@@ -39,19 +40,47 @@ import org.urban.data.core.io.FileSystem;
  */
 public class Dataset2ColumnsConverter {
     
-    private final ColumnFactory _columnFactory;
-    private final PrintWriter _out;
+    private final Counter _counter;
+    private final File _outputDir;
+    private final PrintWriter _statsWriter;
+    private final boolean _toUpper;
     
     public Dataset2ColumnsConverter(
             File outputDir,
             PrintWriter out,
             boolean toUpper
     ) {
-        _out = out;
+        _outputDir = outputDir;
+        _statsWriter = out;
+        _toUpper = toUpper;
         
-        _columnFactory = new ColumnFactory(outputDir, toUpper);
+        _counter = new Counter(0);
     }
     
+    private ColumnHandler getHandler(File inputFile, String columnName) throws java.io.IOException {
+
+        int columnId = _counter.inc();
+        File outputFile = FileSystem.joinPath(
+                _outputDir,
+                columnId + ".txt.gz"
+        );
+        if (inputFile.length() < 2500000000l) {
+            return new ValueSetIndex(
+                outputFile,
+                columnId,
+                columnName,
+                _toUpper
+            );
+        } else {
+        return new ExternalColumnValueList(
+                outputFile,
+                columnId,
+                columnName,
+                _toUpper
+        );
+        }
+    }
+
     /**
      * Convert a list of dataset files into a set of column files.
      * 
@@ -74,7 +103,7 @@ public class Dataset2ColumnsConverter {
             try (CSVParser in = SocrataHelper.tsvParser(file)) {
                 List<ColumnHandler> columns = new ArrayList<>();
                 for (String colName : in.getHeaderNames()) {
-                    columns.add(_columnFactory.getHandler(dataset, colName));
+                    columns.add(this.getHandler(file, colName));
                 }
                 int rowCount = 0;
                 for (CSVRecord row : in) {
@@ -85,15 +114,18 @@ public class Dataset2ColumnsConverter {
                         }
                     }
                     rowCount++;
+                    if ((rowCount % 10000000) == 0) {
+                        System.out.println(rowCount + " @ " + new java.util.Date());
+                    }
                 }
                 for (ColumnHandler column : columns) {
-                    column.close();
-                    _out.println(
+                    ColumnStats stats = column.write();
+                    _statsWriter.println(
                             column.id() + "\t" +
                             dataset + "\t" +
                             column.name() + "\t" +
-                            column.distinctCount() + "\t" +
-                            column.totalCount() + "\t" +
+                            stats.distinctCount() + "\t" +
+                            stats.totalCount() + "\t" +
                             rowCount
                     );
                 }
@@ -103,28 +135,27 @@ public class Dataset2ColumnsConverter {
     
     private final static String COMMAND =
             "Usage:\n" +
-            "  <input-dir>\n" +
-            "  <columns-file>\n" +
+            "  <input-file>\n" +
             "  <to-upper>\n" +
             "  <output-dir>";
     
     public static void main(String[] args) {
         
-        System.out.println("Convert Datasets to Columns (Version 0.1.0)");
+        System.out.println("Convert Datasets to Columns (Version 0.2.0)");
 
-        if (args.length != 4) {
+        if (args.length != 3) {
             System.out.println(COMMAND);
             System.exit(-1);
         }
         
         File inputFile = new File(args[0]);
-        File columnFile = new File(args[1]);
-        boolean toUpper = Boolean.parseBoolean(args[2]);
-        File outputDir = new File(args[3]);
+        boolean toUpper = Boolean.parseBoolean(args[1]);
+        File outputDir = new File(args[2]);
         
-        try (PrintWriter out = FileSystem.openPrintWriter(columnFile)) {
-            List<File> files = new FileListReader(new String[]{".csv", ".tsv"})
-                    .listFiles(inputFile);
+        List<File> files = new ArrayList<>();
+        files.add(inputFile);
+        
+        try (PrintWriter out = new PrintWriter(System.out)) {
             new Dataset2ColumnsConverter(outputDir, out, toUpper).run(files);
         } catch (java.io.IOException ex) {
             Logger.getGlobal().log(Level.SEVERE, "RUN", ex);
