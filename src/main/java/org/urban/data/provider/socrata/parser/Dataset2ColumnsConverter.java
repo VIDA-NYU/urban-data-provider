@@ -15,13 +15,16 @@
  */
 package org.urban.data.provider.socrata.parser;
 
+import java.io.BufferedWriter;
+import org.urban.data.provider.socrata.profiling.ColumnStats;
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.util.count.Counter;
@@ -40,21 +43,37 @@ import org.urban.data.provider.socrata.SocrataHelper;
  */
 public class Dataset2ColumnsConverter {
     
+    private static final String ENV_THRESHOLD = "SOCRATA_FILETHRESHOLD";
+    
+    private static final Logger LOGGER = Logger
+            .getLogger(Dataset2ColumnsConverter.class.getName());
+    
     private final Counter _counter;
+    private final long _fileSizeThreshold;
     private final File _outputDir;
-    private final PrintWriter _statsWriter;
+    private final CSVPrinter _statsWriter;
     private final boolean _toUpper;
     
     public Dataset2ColumnsConverter(
             File outputDir,
-            PrintWriter out,
-            boolean toUpper
+            CSVPrinter out,
+            boolean toUpper,
+            long fileSizeThreshold
     ) {
         _outputDir = outputDir;
         _statsWriter = out;
         _toUpper = toUpper;
+        _fileSizeThreshold  = fileSizeThreshold;
         
         _counter = new Counter(0);
+    }
+
+    public Dataset2ColumnsConverter(
+            File outputDir,
+            CSVPrinter out,
+            boolean toUpper
+    ) {
+        this(outputDir, out, toUpper, getThresholdFromEnv());
     }
     
     private ColumnHandler getHandler(File inputFile, String columnName) throws java.io.IOException {
@@ -64,23 +83,36 @@ public class Dataset2ColumnsConverter {
                 _outputDir,
                 columnId + ".txt.gz"
         );
-        if (inputFile.length() < 2500000000l) {
+        if ((_fileSizeThreshold > 0) && (inputFile.length() > _fileSizeThreshold)) {
+            return new ExternalColumnValueList(
+                    outputFile,
+                    columnId,
+                    columnName,
+                    _toUpper
+            );
+        } else {
             return new ValueSetIndex(
                 outputFile,
                 columnId,
                 columnName,
                 _toUpper
             );
-        } else {
-        return new ExternalColumnValueList(
-                outputFile,
-                columnId,
-                columnName,
-                _toUpper
-        );
         }
     }
 
+    private static long getThresholdFromEnv() {
+        
+        String value = System.getenv(ENV_THRESHOLD);
+        if (value != null) {
+            try {
+                return Long.parseLong(value);
+            } catch (java.lang.NumberFormatException ex) {
+                LOGGER.log(Level.SEVERE, ENV_THRESHOLD, ex);
+            }
+        }
+        return -1;
+    }
+    
     /**
      * Convert a list of dataset files into a set of column files.
      * 
@@ -120,12 +152,12 @@ public class Dataset2ColumnsConverter {
                 }
                 for (ColumnHandler column : columns) {
                     ColumnStats stats = column.write();
-                    _statsWriter.println(
-                            column.id() + "\t" +
-                            dataset + "\t" +
-                            column.name() + "\t" +
-                            stats.distinctCount() + "\t" +
-                            stats.totalCount() + "\t" +
+                    _statsWriter.printRecord(
+                            column.id(),
+                            dataset,
+                            column.name(),
+                            stats.distinctCount(),
+                            stats.totalCount(),
                             rowCount
                     );
                 }
@@ -141,7 +173,7 @@ public class Dataset2ColumnsConverter {
     
     public static void main(String[] args) {
         
-        System.out.println("Convert Datasets to Columns (Version 0.2.0)");
+        System.out.println("Convert Datasets to Columns (Version 0.3.0)");
 
         if (args.length != 3) {
             System.out.println(COMMAND);
@@ -155,8 +187,13 @@ public class Dataset2ColumnsConverter {
         List<File> files = new ArrayList<>();
         files.add(inputFile);
         
-        try (PrintWriter out = new PrintWriter(System.out)) {
-            new Dataset2ColumnsConverter(outputDir, out, toUpper).run(files);
+        File columnsDir = FileSystem.joinPath(outputDir, "columns");
+        File columnsFile = FileSystem.joinPath(outputDir, "columns.tsv");
+
+        try (BufferedWriter out = FileSystem.openBufferedWriter(columnsFile)) {
+            CSVPrinter csvPrinter = new CSVPrinter(out, CSVFormat.TDF);
+            new Dataset2ColumnsConverter(columnsDir, csvPrinter, toUpper).run(files);
+            csvPrinter.flush();
         } catch (java.io.IOException ex) {
             Logger.getGlobal().log(Level.SEVERE, "RUN", ex);
             System.exit(-1);

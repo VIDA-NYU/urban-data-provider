@@ -15,6 +15,8 @@
  */
 package org.urban.data.provider.socrata.parser;
 
+import org.urban.data.provider.socrata.profiling.ColumnStats;
+
 /**
  * Interface for column value handlers that are used to generate list of unique
  * column values.

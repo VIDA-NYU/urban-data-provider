@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.parser;
+package org.urban.data.provider.socrata.profiling;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 /**
  * Record of distinct and total values in a column.
@@ -22,8 +25,8 @@ package org.urban.data.provider.socrata.parser;
  */
 public class ColumnStats {
    
-    private final int _distinctCount;
-    private final int _totalCount;
+    private int _distinctCount;
+    private int _totalCount;
     
     public ColumnStats(int distinctCount, int totalCount) {
         
@@ -31,13 +34,32 @@ public class ColumnStats {
         _totalCount = totalCount;
     }
     
+    public ColumnStats() {
+        
+        this(0, 0);
+    }
+    
     public int distinctCount() {
         
         return _distinctCount;
     }
     
+    public void inc(int count) {
+        
+        _distinctCount++;
+        _totalCount += count;
+    }
+    
+    public JsonObject toJson() {
+        
+        JsonObject doc = new JsonObject();
+        doc.add("distinctCount", new JsonPrimitive(_distinctCount));
+        doc.add("totalCount", new JsonPrimitive(_totalCount));
+        return doc;
+    }
+    
     public int totalCount() {
     
-    return _totalCount;
-}
+        return _totalCount;
+    }
 }

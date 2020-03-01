@@ -40,23 +40,26 @@ public class DatasetProfiler {
             columns[iColumn] = new ColumnProfiler(columnNames.get(iColumn));
         }
         
+        int rowCount = 0;
         for (CSVRecord row : in) {
             for (int iColumn = 0; iColumn < row.size(); iColumn++) {
-                columns[iColumn].add(row.get(iColumn));
+                columns[iColumn].profile(row.get(iColumn));
             }
+            rowCount++;
         }
         
-        for (ColumnProfiler column : columns) {
-            System.out.println(column.name());
-            System.out.println("  NON-EMPTY CELLS    : " + column.nonEmptyCells());
-            System.out.println("  EMPTY CELLS        : " + column.emptyCells());
-            System.out.println("  DISTINCT DATES     : " + column.distinctDateValues());
-            System.out.println("  DISTINCT DECIMAL   : " + column.distinctDecimalValues());
-            System.out.println("  DISTINCT GEO POINTS: " + column.distinctGeoValues());
-            System.out.println("  DISTINCT INTEGER   : " + column.distinctIntValues());
-            System.out.println("  DISTINCT LONG      : " + column.distinctLongValues());
-            System.out.println("  DISTINCT TEXT      : " + column.distinctTextValues());
-            System.out.println("  DISTINCT VALUES    : " + column.distinctValues());
+        for (int iColumn = 0; iColumn < columns.length; iColumn++) {
+            ColumnProfiler column = columns[iColumn];
+            System.out.println(columnNames.get(iColumn));
+            System.out.println("  NON-EMPTY CELLS    : " + column.totalCount());
+            System.out.println("  EMPTY CELLS        : " + (rowCount - column.totalCount()));
+            System.out.println("  DISTINCT DATES     : " + column.dateValues().distinctCount());
+            System.out.println("  DISTINCT DECIMAL   : " + column.decimalValues().distinctCount());
+            System.out.println("  DISTINCT GEO POINTS: " + column.geoValues().distinctCount());
+            System.out.println("  DISTINCT INTEGER   : " + column.intValues().distinctCount());
+            System.out.println("  DISTINCT LONG      : " + column.longValues().distinctCount());
+            System.out.println("  DISTINCT TEXT      : " + column.textValues().distinctCount());
+            System.out.println("  DISTINCT VALUES    : " + column.distinctCount());
             System.out.println();
         }
     }

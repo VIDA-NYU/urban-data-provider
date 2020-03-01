@@ -16,12 +16,14 @@
 package org.urban.data.provider.socrata.study.prepare;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.urban.data.core.io.FileListReader;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.provider.socrata.parser.Dataset2ColumnsConverter;
@@ -45,7 +47,7 @@ public class ColumnFilesGenerator {
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Column Files Generator - 0.1.5");
+        System.out.println("Socrata Data Study - Column Files Generator - 0.1.7");
         
         if (args.length != 4) {
             System.out.println(COMMAND);
@@ -79,11 +81,13 @@ public class ColumnFilesGenerator {
                     File columnsDir = FileSystem.joinPath(domainDir, "columns");
                     File columnsFile = FileSystem.joinPath(domainDir, "columns.tsv");
                     createEmptyFolder(columnsDir);
-                    try (PrintWriter out = FileSystem.openPrintWriter(columnsFile)) {
+                    try (BufferedWriter out = FileSystem.openBufferedWriter(columnsFile)) {
+                        CSVPrinter csvPrinter = new CSVPrinter(out, CSVFormat.TDF);
                         List<File> files = new FileListReader(new String[]{".tsv"})
                                 .listFiles(tsvDir);
-                        new Dataset2ColumnsConverter(columnsDir, out, false)
+                        new Dataset2ColumnsConverter(columnsDir, csvPrinter, false)
                                 .run(files);
+                        csvPrinter.flush();
                     } catch (java.io.IOException ex) {
                         LOGGER.log(Level.SEVERE, "RUN", ex);
                     }

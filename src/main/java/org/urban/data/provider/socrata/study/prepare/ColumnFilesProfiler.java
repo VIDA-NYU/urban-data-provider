@@ -15,17 +15,20 @@
  */
 package org.urban.data.provider.socrata.study.prepare;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.PrintWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.io.SynchronizedWriter;
+import org.urban.data.core.io.SynchronizedJsonWriter;
 
 /**
  * Count values and determine data types for all columns.
@@ -45,7 +48,7 @@ public class ColumnFilesProfiler {
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Column Files Profiler - 0.1.1");
+        System.out.println("Socrata Data Study - Column Files Profiler - 0.1.2");
     
         if (args.length != 3) {
             System.out.println(COMMAND);
@@ -63,13 +66,13 @@ public class ColumnFilesProfiler {
                 File columnsDir = FileSystem.joinPath(directory, "columns");
                 File columnsFile = FileSystem.joinPath(directory, "columns.tsv");
                 if ((columnsDir.isDirectory()) && (columnsFile.isFile())) {
-                    try (BufferedReader in = FileSystem.openReader(columnsFile)) {
-                        String line;
-                        while ((line = in.readLine()) != null) {
-                            String[] tokens = line.split("\t");
-                            int columnId = Integer.parseInt(tokens[0]);
-                            String dataset = tokens[1];
-                            String filename = columnId + "." + ".txt.gz";
+                    try (InputStream is = FileSystem.openFile(columnsFile)) {
+                        CSVParser parser;
+                        parser = new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
+                        for (CSVRecord row : parser) {
+                            int columnId = Integer.parseInt(row.get(0));
+                            String dataset = row.get(1);
+                            String filename = columnId + ".txt.gz";
                             ColumnFile column = new ColumnFile(
                                     columnId,
                                     dataset,
@@ -87,11 +90,10 @@ public class ColumnFilesProfiler {
         
         System.out.println("Start with " + files.size() + " files");
         
-        try (PrintWriter out = FileSystem.openPrintWriter(outputFile)) {
-            SynchronizedWriter writer = new SynchronizedWriter(out);
+        try (SynchronizedJsonWriter out = new SynchronizedJsonWriter(outputFile)) {
             ExecutorService es = Executors.newCachedThreadPool();
             for (int iThread = 0; iThread < threads; iThread++) {
-                es.execute(new ProfilerTask(iThread, files, writer));
+                es.execute(new ProfilerTask(iThread, files, out));
             }
             es.shutdown();
             es.awaitTermination(threads, TimeUnit.DAYS);

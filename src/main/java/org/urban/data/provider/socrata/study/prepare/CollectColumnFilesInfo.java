@@ -15,11 +15,17 @@
  */
 package org.urban.data.provider.socrata.study.prepare;
 
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
 import org.urban.data.core.io.FileSystem;
 
 /**
@@ -48,21 +54,37 @@ public class CollectColumnFilesInfo {
         File outputFile = new File(args[1]);
         
         try (PrintWriter out = FileSystem.openPrintWriter(outputFile)) {
+            CSVPrinter csvPrinter = new CSVPrinter(out, CSVFormat.TDF);
             for (File directory : baseDir.listFiles()) {
                 if (directory.isDirectory()) {
+                    File columnsDir = FileSystem.joinPath(directory, "columns");
                     File columnsFile = FileSystem.joinPath(directory, "columns.tsv");
                     if (columnsFile.isFile()) {
-                        try (BufferedReader in = FileSystem.openReader(columnsFile)) {
-                            String line;
-                            while ((line = in.readLine()) != null) {
-                                String[] tokens = line.split("\t");
-                                String name = replaceSpecChars(tokens[2]);
-                                out.println(line + "\t" + name);
+                        try (InputStream is = FileSystem.openFile(columnsFile)) {
+                            CSVParser parser;
+                            parser = new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
+                            for (CSVRecord row : parser) {
+                                if (row.size() == 6) {
+                                    int columnId = Integer.parseInt(row.get(0));
+                                    String name = replaceSpecChars(row.get(2));
+                                    String filename = columnId + ".txt.gz";
+                                    File columnFile = FileSystem.joinPath(columnsDir, filename);
+                                    if (!columnFile.isFile()) {
+                                        ArrayList<String> values = new ArrayList<>();
+                                        for (String val : row) {
+                                            values.add(val);
+                                        }
+                                        values.add(name);
+                                        values.add(Long.toString(columnFile.length()));
+                                        csvPrinter.printRecord(values);
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+            csvPrinter.flush();
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, "RUN", ex);
             System.exit(-1);

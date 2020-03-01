@@ -15,6 +15,7 @@
  */
 package org.urban.data.provider.socrata.parser;
 
+import org.urban.data.provider.socrata.profiling.ColumnStats;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;

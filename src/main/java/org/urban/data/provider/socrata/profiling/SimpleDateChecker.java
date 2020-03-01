@@ -27,11 +27,9 @@ public class SimpleDateChecker {
     private final String _delim;
     private final SimpleDateFormat _df;
     private final int[] _minLength;
-    private final String _pattern;
     
     public SimpleDateChecker(String pattern, String delim, int[] minLength) {
 	
-        _pattern = pattern;
         _delim = delim;
         _minLength = minLength;
         _df = new SimpleDateFormat("'^'" + pattern + "'$'");

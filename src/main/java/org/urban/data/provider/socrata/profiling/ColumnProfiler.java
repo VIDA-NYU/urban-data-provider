@@ -15,26 +15,21 @@
  */
 package org.urban.data.provider.socrata.profiling;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
-import org.urban.data.core.util.count.Counter;
-
 /**
  * Keep track of distinct columns values, based on their type. Maintains a
  * frequency count for each value.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class ColumnProfiler {
+public class ColumnProfiler extends ColumnStats {
     
-    private final HashMap<Long, Counter> _dateValues = new HashMap<>();
-    private final HashMap<BigDecimal, Counter> _decimalValues = new HashMap<>();
-    private int _emptyCells = 0;
-    private final HashMap<String, Counter> _geoValues = new HashMap<>();
-    private final HashMap<Integer, Counter> _intValues = new HashMap<>();
-    private final HashMap<Long, Counter> _longValues = new HashMap<>();
+    private final DateColumnStats _dateValues = new DateColumnStats();
+    private final DecimalColumnStats _decimalValues = new DecimalColumnStats();
+    private final ColumnStats _geoValues = new ColumnStats();
+    private final IntColumnStats _intValues = new IntColumnStats();
+    private final LongColumnStats _longValues = new LongColumnStats();
     private final String _name;
-    private final HashMap<String, Counter> _textValues = new HashMap<>();
+    private final TextColumnStats _textValues = new TextColumnStats();
     private final SocrataTypeChecker _typeChecker = new SocrataTypeChecker();
     
     public ColumnProfiler(String name) {
@@ -47,138 +42,64 @@ public class ColumnProfiler {
         this("");
     }
     
-    public Value add(String term, int count) {
+    public void add(Value value, int count) {
         
-        if (term == null) {
-            _emptyCells++;
-        } else if (term.equals("")) {
-            _emptyCells++;
+        super.inc(count);
+        
+        if (value.isDate()) {
+            _dateValues.add(value.getAsDate(), count);
+        } else if (value.isDecimal()) {
+            _decimalValues.add(value.getAsDecimal(), count);
+        } else if (value.isInt()) {
+            _intValues.add(value.getAsInt(), count);
+        } else if (value.isLong()) {
+            _longValues.add(value.getAsLong(), count);
+        } else if (value.isGeoPoint()) {
+            _geoValues.inc(count);
         } else {
-            Value value = _typeChecker.getValue(term);
-            if (value.isDate()) {
-                Long key = value.getAsLong();
-                if (_dateValues.containsKey(key)) {
-                    _dateValues.get(key).inc(count);
-                } else {
-                    _dateValues.put(key, new Counter(count));
-                }
-            } else if (value.isDecimal()) {
-                BigDecimal key = value.getAsDecimal();
-                if (_decimalValues.containsKey(key)) {
-                    _decimalValues.get(key).inc(count);
-                } else {
-                    _decimalValues.put(key, new Counter(count));
-                }
-            } else if (value.isInt()) {
-                Integer key = value.getAsInt();
-                if (_intValues.containsKey(key)) {
-                    _intValues.get(key).inc(count);
-                } else {
-                    _intValues.put(key, new Counter(count));
-                }
-            } else if (value.isLong()) {
-                Long key = value.getAsLong();
-                if (_longValues.containsKey(key)) {
-                    _longValues.get(key).inc(count);
-                } else {
-                    _longValues.put(key, new Counter(count));
-                }
-            } else if (value.isGeoPoint()) {
-                if (_geoValues.containsKey(term)) {
-                    _geoValues.get(term).inc(count);
-                } else {
-                    _geoValues.put(term, new Counter(count));
-                }
-            } else {
-                if (_textValues.containsKey(term)) {
-                    _textValues.get(term).inc(count);
-                } else {
-                    _textValues.put(term, new Counter(count));
-                }
-            }
-            return value;
+            _textValues.add(value.getAsText(), count);
         }
-        return null;
     }
     
-    public void add(String term) {
+    public Value profile(String term, int count) {
         
-        this.add(term, 1);
+        Value value = _typeChecker.getValue(term);
+        this.add(value, count);
+        return value;
     }
     
-    public int distinctDateValues() {
+    public void profile(String term) {
         
-        return _dateValues.size();
+        this.profile(term, 1);
     }
     
-    public int distinctDecimalValues() {
+    public DateColumnStats dateValues() {
         
-        return  _decimalValues.size();
+        return _dateValues;
     }
     
-    public int distinctGeoValues() {
+    public DecimalColumnStats decimalValues() {
         
-        return _geoValues.size();
+        return  _decimalValues;
     }
     
-    public int distinctIntValues() {
+    public ColumnStats geoValues() {
         
-        return _intValues.size();
+        return _geoValues;
     }
     
-    public int distinctLongValues() {
+    public IntColumnStats intValues() {
         
-        return _longValues.size();
+        return _intValues;
     }
     
-    public int distinctTextValues() {
+    public LongColumnStats longValues() {
         
-        return _textValues.size();
+        return _longValues;
     }
     
-    public int distinctValues() {
+    public TextColumnStats textValues() {
         
-        int result = 0;
-        result += this.distinctDateValues();
-        result += this.distinctDecimalValues();
-        result += this.distinctGeoValues();
-        result += this.distinctIntValues();
-        result += this.distinctLongValues();
-        result += this.distinctTextValues();
-        return result;
-    }
-    
-    public int emptyCells() {
-        
-        return _emptyCells;
-    }
-    
-    public String name() {
-        
-        return _name;
-    }
-    
-    public int nonEmptyCells() {
-        
-        int result = 0;
-        for (Counter count : _dateValues.values()) {
-            result += count.value();
-        }
-        for (Counter count : _decimalValues.values()) {
-            result += count.value();
-        }
-        for (Counter count : _intValues.values()) {
-            result += count.value();
-        }
-        for (Counter count : _longValues.values()) {
-            result += count.value();
-        }
-        for (Counter count : _geoValues.values()) {
-            result += count.value();
-        }
-        for (Counter count : _textValues.values()) {
-            result += count.value();
-        }
-        return result;
+        return _textValues;
     }
 }

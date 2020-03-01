@@ -15,15 +15,17 @@
  */
 package org.urban.data.provider.socrata.study.prepare;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.io.BufferedReader;
 import java.io.File;
-import java.util.HashSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.io.SynchronizedWriter;
+import org.urban.data.core.io.SynchronizedJsonWriter;
 import org.urban.data.provider.socrata.profiling.ColumnProfiler;
+import org.urban.data.provider.socrata.profiling.Value;
 
 /**
  *
@@ -36,12 +38,12 @@ public class ProfilerTask implements Runnable {
     
     private final int _id;
     private final ConcurrentLinkedQueue<ColumnFile> _queue;
-    private final SynchronizedWriter _out;
+    private final SynchronizedJsonWriter _out;
     
     public ProfilerTask(
             int id,
             ConcurrentLinkedQueue<ColumnFile> queue,
-            SynchronizedWriter out
+            SynchronizedJsonWriter out
     ) {
         _id = id;
         _queue = queue;
@@ -52,7 +54,7 @@ public class ProfilerTask implements Runnable {
             File columnFile,
             int columnId,
             String dataset,
-            SynchronizedWriter out
+            SynchronizedJsonWriter out
     ) {
         
         if (!columnFile.isFile()) {
@@ -61,7 +63,6 @@ public class ProfilerTask implements Runnable {
         }
         
         ColumnProfiler profiler = new ColumnProfiler();
-        HashSet<String> upper = new HashSet<>();
         
         try (BufferedReader in = FileSystem.openReader(columnFile)) {
             String line;
@@ -69,29 +70,29 @@ public class ProfilerTask implements Runnable {
                 String[] tokens = line.split("\t");
                 String term = tokens[0];
                 int count = Integer.parseInt(tokens[0]);
-                profiler.add(term, count);
-                String termUpper = term.toUpperCase();
-                if (!upper.contains(termUpper)) {
-                    upper.add(termUpper);
-                }
+                Value value = profiler.profile(term, count);
             }
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, dataset + " (" + columnId + ")", ex);
             return;
         }
         
-        out.write(
-                columnId + "\t" +
-                dataset + "\t" +
-                profiler.distinctValues() + "\t" +
-                upper.size() + "\t" +
-                profiler.distinctDateValues() + "\t" +
-                profiler.distinctDecimalValues() + "\t" +
-                profiler.distinctIntValues() + "\t" +
-                profiler.distinctLongValues() + "\t" +
-                profiler.distinctGeoValues() + "\t" +
-                profiler.distinctTextValues()
-        );
+        JsonObject doc = new JsonObject();
+        doc.add("columnId", new JsonPrimitive(columnId));
+        doc.add("datasetId", new JsonPrimitive(dataset));
+        doc.add("stats", profiler.toJson());
+        
+        JsonObject types = new JsonObject();
+        types.add("dateValues", profiler.dateValues().toJson());
+        types.add("decimalValues", profiler.decimalValues().toJson());
+        types.add("geoValues", profiler.geoValues().toJson());
+        types.add("intValues", profiler.intValues().toJson());
+        types.add("longValues", profiler.longValues().toJson());
+        types.add("textValues", profiler.textValues().toJson());
+        
+        doc.add("types", types);
+        
+        out.write(doc);
     }
 
     @Override
