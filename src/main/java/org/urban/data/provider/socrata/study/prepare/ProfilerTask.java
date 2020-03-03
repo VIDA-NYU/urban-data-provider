@@ -17,15 +17,18 @@ package org.urban.data.provider.socrata.study.prepare;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.io.SynchronizedJsonWriter;
 import org.urban.data.provider.socrata.profiling.ColumnProfiler;
-import org.urban.data.provider.socrata.profiling.Value;
 
 /**
  *
@@ -64,13 +67,18 @@ public class ProfilerTask implements Runnable {
         
         ColumnProfiler profiler = new ColumnProfiler();
         
-        try (BufferedReader in = FileSystem.openReader(columnFile)) {
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] tokens = line.split("\t");
-                String term = tokens[0];
-                int count = Integer.parseInt(tokens[0]);
-                Value value = profiler.profile(term, count);
+        try (InputStream is = FileSystem.openFile(columnFile)) {
+            CSVParser parser;
+            parser = new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
+            for (CSVRecord row : parser) {
+                if (row.size() == 2) {
+                    String term = row.get(0);
+                    int count = Integer.parseInt(row.get(1));
+                    profiler.profile(term, count);
+                } else {
+                    LOGGER.log(Level.INFO, columnFile.getAbsolutePath());
+                    LOGGER.log(Level.INFO, row.toString());
+                }
             }
         } catch (java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, dataset + " (" + columnId + ")", ex);

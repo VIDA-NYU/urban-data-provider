@@ -19,6 +19,8 @@ import org.urban.data.provider.socrata.profiling.ColumnStats;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.util.count.Counter;
 
@@ -30,7 +32,7 @@ public class ValueSetIndex implements ColumnHandler {
     
     private final int _columnId;
     private final String _columnName;
-    private final PrintWriter _out;
+    private final File _file;
     private final HashMap<String, Counter> _terms;
     private int _totalCount = 0;
     private final boolean _toUpper;
@@ -42,7 +44,7 @@ public class ValueSetIndex implements ColumnHandler {
             boolean toUpper
     ) throws java.io.IOException {
 
-        _out = FileSystem.openPrintWriter(file);
+        _file = file;
         _columnId = columnId;
         _columnName = columnName;
         _terms = new HashMap<>();
@@ -90,11 +92,14 @@ public class ValueSetIndex implements ColumnHandler {
     @Override
     public ColumnStats write() {
 
-        for (String key : _terms.keySet()) {
-            String term = key.replaceAll("\\t", " ").replaceAll("\\n", " ");
-            _out.println(term + "\t" + _terms.get(key).value());
+        try (PrintWriter out = FileSystem.openPrintWriter(_file)) {
+            CSVPrinter csvPrinter = new CSVPrinter(out, CSVFormat.TDF);
+            for (String term : _terms.keySet()) {
+                csvPrinter.printRecord(term, _terms.get(term).value());
+            }
+        } catch (java.io.IOException ex) {
+            throw new RuntimeException(ex);
         }
-        _out.close();
         
         return new ColumnStats(this.distinctCount(), this.totalCount());
     }

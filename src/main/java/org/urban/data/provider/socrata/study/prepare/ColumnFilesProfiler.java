@@ -48,7 +48,7 @@ public class ColumnFilesProfiler {
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Column Files Profiler - 0.1.2");
+        System.out.println("Socrata Data Study - Column Files Profiler - 0.1.5");
     
         if (args.length != 3) {
             System.out.println(COMMAND);

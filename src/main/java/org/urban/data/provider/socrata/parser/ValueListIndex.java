@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.urban.data.core.io.FileSystem;
 
 
@@ -51,15 +53,7 @@ public class ValueListIndex implements ColumnHandler {
         _toUpper = toUpper;
     }
 
-    public ValueListIndex() {
-
-        _columnId = -1;
-        _columnName = null;
-        _file = null;
-        _terms = null;
-        _toUpper = false;
-    }
-
+    @Override
     public void add(String value) {
 
         String term = value;
@@ -69,7 +63,20 @@ public class ValueListIndex implements ColumnHandler {
         
         _terms.add(term);
     }
+    
+    @Override
+    public int id() {
+        
+        return _columnId;
+    }
+    
+    @Override
+    public String name() {
+        
+        return _columnName;
+    }
 
+    @Override
     public ColumnStats write() throws java.io.IOException {
 
         if (_file == null) {
@@ -80,6 +87,7 @@ public class ValueListIndex implements ColumnHandler {
         
         int distinctCount = 0;
         try (PrintWriter out = FileSystem.openPrintWriter(_file)) {
+            CSVPrinter csv = new CSVPrinter(out, CSVFormat.TDF);
             if (!_terms.isEmpty()) {
                 String term = _terms.get(0);
                 int counter = 1;
@@ -89,32 +97,17 @@ public class ValueListIndex implements ColumnHandler {
                     if (nextTerm.equals(term)) {
                         counter++;
                     } else {
-                        this.writeTerm(term, counter, out);
+                        csv.printRecord(term, counter);
                         term = nextTerm;
                         counter = 1;
                         distinctCount++;
                     }
                 }
-                this.writeTerm(term, counter, out);
+                csv.printRecord(term, counter);
             }
+            csv.flush();
         }
         
         return new ColumnStats(distinctCount, _terms.size());
-    }
-    
-    public int id() {
-        
-        return _columnId;
-    }
-    
-    public String name() {
-        
-        return _columnName;
-    }
-    
-    private void writeTerm(String term, int count, PrintWriter out) {
-        
-        term = term.replaceAll("\\t", " ").replaceAll("\\n", " ");
-        out.println(term + "\t" + count);
     }
 }

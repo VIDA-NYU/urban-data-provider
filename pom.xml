@@ -62,7 +62,7 @@
                    <archive>
                       <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.urban.data.provider.socrata.study.prepare.ColumnFilesGenerator</mainClass>
+                            <mainClass>org.urban.data.provider.socrata.parser.MissingColumnsConverter</mainClass>
                       </manifest>
                    </archive>
                 </configuration>

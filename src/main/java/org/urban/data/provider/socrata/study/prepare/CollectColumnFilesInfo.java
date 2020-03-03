@@ -45,6 +45,8 @@ public class CollectColumnFilesInfo {
     
     public static void main(String[] args) {
     
+        System.out.println("Socrata Data Study - Column Files Info Writer - 0.1.4");
+    
         if (args.length != 2) {
             System.out.println(COMMAND);
             System.exit(-1);
@@ -61,6 +63,7 @@ public class CollectColumnFilesInfo {
                     File columnsFile = FileSystem.joinPath(directory, "columns.tsv");
                     if (columnsFile.isFile()) {
                         try (InputStream is = FileSystem.openFile(columnsFile)) {
+                            System.out.println(directory.getName());
                             CSVParser parser;
                             parser = new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
                             for (CSVRecord row : parser) {
@@ -69,7 +72,7 @@ public class CollectColumnFilesInfo {
                                     String name = replaceSpecChars(row.get(2));
                                     String filename = columnId + ".txt.gz";
                                     File columnFile = FileSystem.joinPath(columnsDir, filename);
-                                    if (!columnFile.isFile()) {
+                                    if (columnFile.isFile()) {
                                         ArrayList<String> values = new ArrayList<>();
                                         for (String val : row) {
                                             values.add(val);
@@ -77,9 +80,17 @@ public class CollectColumnFilesInfo {
                                         values.add(name);
                                         values.add(Long.toString(columnFile.length()));
                                         csvPrinter.printRecord(values);
+                                        csvPrinter.flush();
+                                    } else {
+                                        System.out.println("no file " + columnFile.getAbsolutePath());
                                     }
+                                } else {
+                                    System.out.println(row);
                                 }
                             }
+                        } catch (java.lang.IllegalStateException | java.io.IOException ex) {
+                            LOGGER.log(Level.SEVERE, directory.getName(), ex);
+                            System.exit(-1);
                         }
                     }
                 }

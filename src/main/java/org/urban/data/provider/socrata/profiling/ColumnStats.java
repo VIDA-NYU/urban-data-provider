@@ -58,6 +58,12 @@ public class ColumnStats {
         return doc;
     }
     
+    @Override
+    public String toString() {
+        
+        return _distinctCount + "\t" + _totalCount;
+    }
+    
     public int totalCount() {
     
         return _totalCount;
