@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.urban.data.core.io.FileSystem;
 import org.urban.data.core.util.MemUsagePrinter;
 
@@ -96,6 +98,7 @@ public class ExternalColumnValueList implements ColumnHandler {
         
         int distinctCount = 0;
         try (PrintWriter out = FileSystem.openPrintWriter(_file)) {
+            CSVPrinter csv = new CSVPrinter(out, CSVFormat.TDF);
             if (!terms.isEmpty()) {
                 String term = terms.get(0);
                 int counter = 1;
@@ -105,17 +108,16 @@ public class ExternalColumnValueList implements ColumnHandler {
                     if (nextTerm.equals(term)) {
                         counter++;
                     } else {
-                        out.println(term + "\t" + counter);
+                        csv.printRecord(term, counter);
                         term = nextTerm;
                         counter = 1;
                         distinctCount++;
                     }
                 }
-                out.println(term + "\t" + counter);
+                csv.printRecord(term, counter);
             }
+            csv.flush();
         }
-        
-        new MemUsagePrinter().print();
         
         return new ColumnStats(distinctCount, terms.size());
     }
