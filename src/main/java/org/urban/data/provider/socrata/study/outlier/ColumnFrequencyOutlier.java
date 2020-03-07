@@ -45,7 +45,7 @@ public class ColumnFrequencyOutlier {
     
     public static void main(String[] args) {
     
-        System.out.println("Socrata Data Study - Frequency Outliers - 0.1.0");
+        System.out.println("Socrata Data Study - Frequency Outliers - 0.1.1");
     
         if (args.length != 2) {
             System.out.println(COMMAND);
