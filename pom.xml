@@ -62,7 +62,7 @@
                    <archive>
                       <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.urban.data.provider.socrata.profiling.SocrataColumnTypes</mainClass>
+                            <mainClass>org.urban.data.provider.socrata.study.outlier.ColumnFrequencyOutlier</mainClass>
                       </manifest>
                    </archive>
                 </configuration>
