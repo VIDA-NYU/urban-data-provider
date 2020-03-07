@@ -15,6 +15,7 @@
  */
 package org.urban.data.provider.socrata.study.prepare;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,17 +32,32 @@ public class FileParser {
     
     public static void main(String[] args) {
         
-        if (args.length != 1) {
-            System.out.println("Usage: <input-file>");
+        if (args.length != 2) {
+            System.out.println("Usage: <input-file-list> <spilt-index>");
             System.exit(-1);
         }
         
         File inputFile = new File(args[0]);
-
-        try (InputStream is = FileSystem.openFile(inputFile)) {
+        int index = Integer.parseInt(args[1]);
+        
+        try (BufferedReader in = FileSystem.openReader(inputFile)) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                String filename = line.split("\\s")[index];
+                new FileParser().parse(new File(filename));
+            }
+        } catch (java.io.IOException ex) {
+            ex.printStackTrace();
+            System.exit(-1);
+        }
+    }
+    
+    public void parse(File file) throws java.io.IOException {
+        
+        System.out.println(file.getAbsolutePath());
+        try (InputStream is = FileSystem.openFile(file)) {
             CSVParser parser;
             parser = new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
-            String line;
             int lineCount = 0;
             for (CSVRecord row : parser) {
                 lineCount++;
@@ -50,6 +66,7 @@ public class FileParser {
                     System.out.println(row);
                 }
             }
+            System.out.println(lineCount);
         } catch (java.io.IOException ex) {
             ex.printStackTrace();
             return;

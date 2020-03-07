@@ -24,7 +24,6 @@ import java.util.Collections;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.util.MemUsagePrinter;
 
 
 /**

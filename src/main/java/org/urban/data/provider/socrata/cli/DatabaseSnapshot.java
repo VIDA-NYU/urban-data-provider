@@ -74,8 +74,8 @@ public class DatabaseSnapshot extends CommandImpl implements Command {
         boolean statsOnly = args.getStatsOnly();
         
         for (ResultTuple t : rs) {
-            String domainKey = t.get("domain");
-            String dsId = t.get("dataset");
+            String domainKey = t.getAsString("domain");
+            String dsId = t.getAsString("dataset");
             if (!query.matchesAtOrBefore(new Dataset(dsId, domainKey, date))) {
                 continue;
             }

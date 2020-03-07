@@ -80,8 +80,9 @@ public class ProfilerTask implements Runnable {
                     LOGGER.log(Level.INFO, row.toString());
                 }
             }
-        } catch (java.io.IOException ex) {
+        } catch (java.lang.IllegalStateException | java.io.IOException ex) {
             LOGGER.log(Level.SEVERE, dataset + " (" + columnId + ")", ex);
+            LOGGER.log(Level.SEVERE, columnFile.getAbsolutePath());
             return;
         }
         
