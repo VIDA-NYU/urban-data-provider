@@ -15,6 +15,16 @@
  */
 package org.urban.data.provider.socrata.profiling;
 
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.urban.data.core.io.FileSystem;
+
 /**
  * Keep track of distinct columns values, based on their type. Maintains a
  * frequency count for each value.
@@ -28,19 +38,8 @@ public class ColumnProfiler extends ColumnStats {
     private final ColumnStats _geoValues = new ColumnStats();
     private final IntColumnStats _intValues = new IntColumnStats();
     private final LongColumnStats _longValues = new LongColumnStats();
-    private final String _name;
     private final TextColumnStats _textValues = new TextColumnStats();
     private final SocrataTypeChecker _typeChecker = new SocrataTypeChecker();
-    
-    public ColumnProfiler(String name) {
-        
-        _name = name;
-    }
-    
-    public ColumnProfiler() {
-        
-        this("");
-    }
     
     public void add(Value value, int count) {
         
@@ -68,9 +67,9 @@ public class ColumnProfiler extends ColumnStats {
         return value;
     }
     
-    public void profile(String term) {
+    public Value profile(String term) {
         
-        this.profile(term, 1);
+        return this.profile(term, 1);
     }
     
     public DateColumnStats dateValues() {
@@ -101,5 +100,41 @@ public class ColumnProfiler extends ColumnStats {
     public TextColumnStats textValues() {
         
         return _textValues;
+    }
+    
+    private final static String COMMAND = "Usage: <column-file>";
+    
+    private final static Logger LOGGER = Logger
+            .getLogger(ColumnProfiler.class.getName());
+    
+    public static void main(String[] args) {
+        
+        if (args.length != 1) {
+            System.out.println(COMMAND);
+            System.exit(-1);
+        }
+        
+        File columnFile = new File(args[0]);
+        
+        ColumnProfiler profiler = new ColumnProfiler();
+        
+        try (InputStream is = FileSystem.openFile(columnFile)) {
+            CSVParser parser;
+            parser = new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
+            for (CSVRecord row : parser) {
+                if (row.size() == 2) {
+                    String term = row.get(0);
+                    int count = Integer.parseInt(row.get(1));
+                    Value value = profiler.profile(term, count);
+                    System.out.println(term + "\t" + value);
+                } else {
+                    LOGGER.log(Level.INFO, columnFile.getAbsolutePath());
+                    LOGGER.log(Level.INFO, row.toString());
+                }
+            }
+        } catch (java.lang.IllegalStateException | java.io.IOException ex) {
+            LOGGER.log(Level.SEVERE, columnFile.getAbsolutePath(), ex);
+            System.exit(-1);
+        }
     }
 }

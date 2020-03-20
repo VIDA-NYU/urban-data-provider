@@ -37,7 +37,7 @@ public class DatasetProfiler {
         
         ColumnProfiler[] columns = new ColumnProfiler[columnNames.size()];
         for (int iColumn = 0; iColumn < columnNames.size(); iColumn++) {
-            columns[iColumn] = new ColumnProfiler(columnNames.get(iColumn));
+            columns[iColumn] = new ColumnProfiler();
         }
         
         int rowCount = 0;
