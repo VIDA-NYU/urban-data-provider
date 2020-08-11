@@ -33,10 +33,9 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.query.json.JFilter;
-import org.urban.data.core.query.json.JQuery;
-import org.urban.data.core.sort.NamedObjectComparator;
+import org.urban.data.core.query.JFilter;
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.util.FileSystem;
 
 /**
  * Methods for downloading and querying the Socrata resource catalog.
@@ -284,7 +283,7 @@ public class SocrataCatalog {
             }
         }
         
-        Collections.sort(result, new NamedObjectComparator<>());
+        Collections.sort(result);
         
         return result;
     }

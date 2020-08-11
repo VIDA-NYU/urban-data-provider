@@ -19,7 +19,8 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.urban.data.core.io.FileSystem;
+
+import org.urban.data.core.util.FileSystem;
 
 /**
  * Print a list of available domains at the Socrata API catalogs to standard

@@ -26,10 +26,10 @@ import java.util.logging.Logger;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.stats.ColumnStats;
+import org.urban.data.core.util.FileSystem;
 import org.urban.data.core.util.StringHelper;
-import org.urban.data.core.util.count.Counter;
+import org.urban.data.provider.socrata.profiling.ColumnStats;
+import org.urban.data.core.util.Counter;
 
 /**
  * Collection of classes to create database load files from downloaded dataset
@@ -101,6 +101,7 @@ public class LoadFileGenerator {
                     out.println(line);
                 }
             }
+            in.close();
         }
 
         String tableName = "ds_" + identifier.replaceAll("-", "_");

@@ -23,11 +23,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.query.json.JQuery;
-import org.urban.data.core.query.json.JsonQuery;
-import org.urban.data.core.query.json.ResultTuple;
-import org.urban.data.core.query.json.SelectClause;
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.query.JsonQuery;
+import org.urban.data.core.query.ResultTuple;
+import org.urban.data.core.query.SelectClause;
+import org.urban.data.core.util.FileSystem;
 
 /**
  * Generate a load file containing Socrata data types for all columns in the
@@ -65,8 +65,10 @@ public class SocrataColumnTypes {
             System.exit(-1);
         }
         
-        try (PrintWriter out = FileSystem.openPrintWriter(outputFile)) {
-            CSVPrinter csv = new CSVPrinter(out, CSVFormat.TDF);
+        try (
+        		PrintWriter out = FileSystem.openPrintWriter(outputFile);
+        		CSVPrinter csv = new CSVPrinter(out, CSVFormat.TDF);
+		) {
             for (ResultTuple row : rs) {
                 String datasetId = row.getAsString("id");
                 JsonArray types = row.get("types").getAsJsonArray();

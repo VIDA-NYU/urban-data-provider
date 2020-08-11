@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.urban.data.core.io.FileSystem;
+import org.urban.data.core.util.FileSystem;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.Dataset;
 
@@ -62,8 +62,10 @@ public class Clean extends CommandImpl implements Command {
         boolean multiColumn = false;
         HashSet<String> matchedLabels = new HashSet<>();
         
-        try (InputStream is = FileSystem.openFile(file)) {
-            CSVParser in = new CSVParser(new InputStreamReader(is), CSVFormat.TDF);
+        try (
+        		InputStream is = FileSystem.openFile(file);
+        		CSVParser in = new CSVParser(new InputStreamReader(is), CSVFormat.TDF)
+        ) {
             try {
                 for (CSVRecord record : in) {
                     lineCount++;

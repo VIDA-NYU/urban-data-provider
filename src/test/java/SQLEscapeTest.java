@@ -20,7 +20,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.urban.data.core.util.count.Counter;
+import org.urban.data.core.util.Counter;
 import org.urban.data.provider.socrata.db.DatabaseLoader;
 
 /**

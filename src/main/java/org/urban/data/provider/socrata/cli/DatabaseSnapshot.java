@@ -18,10 +18,11 @@ package org.urban.data.provider.socrata.cli;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import org.urban.data.core.query.json.JQuery;
-import org.urban.data.core.query.json.JsonQuery;
-import org.urban.data.core.query.json.ResultTuple;
-import org.urban.data.core.query.json.SelectClause;
+
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.query.JsonQuery;
+import org.urban.data.core.query.ResultTuple;
+import org.urban.data.core.query.SelectClause;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.Dataset;
 import org.urban.data.provider.socrata.db.DatasetQuery;

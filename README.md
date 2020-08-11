@@ -1,80 +1,25 @@
 Urban Data Integration - Data Provider
 ======================================
 
-This Java library is part of the **Urban Data Integration** project. It provides functionality to download and transform (open urban) data sets from different data provider.
+This Java library is part of the **Urban Data Integration** project. It provides functionality to download open urban data sets from the  [Socrata Discovery API](https://socratadiscovery.docs.apiary.io/).
 
 
-Data Provider - Socrata
------------------------
+Install
+-------
 
-For Socrata the library uses the [Discovery API](https://socratadiscovery.docs.apiary.io/). There are [three tools included in the repository](https://github.com/ViDA-NYU/urban-data-provider/tree/master/lib):
-
-
-### List Socrata Domain
-
-The `SocrataDomains.jar` JAR file lists the names (and number of resources) for each domain that is hosted by the Socrata API.
-
-``` 
-java -jar SocrataDomains.jar
-  {<output-file>} : Optional output file. If omitted output is printed to standard output.
-```
-
-
-### Download Catalog for Resource Type
-
-The `SocrataCatalog.jar` JAR file downloads parts of the Socrata catalog. Download is limited to resources of a specified type. Optional, download can further be limited to resources from a given domain.
+Compile the sources and create a runnable jar file using maven. Then copy the jar file as `Socrata.jar` into a local folder on your machine.
 
 ```
-java -jar SocrataCatalog.jar
-  <catalog-file>      : Name of the output file (e.g., catalog.json)
-  <resource-type> [   : Download all resources for a given type from the Socrata taxonomy.
-    api |
-    calendar |
-    chart |
-    datalens |
-    dataset |
-    federated_href |
-    file |
-    filter |
-    form |
-    href |
-    link |
-    map |
-    measure |
-    story |
-    visualization
-  ]
-  {<domain>}          : Optional. Limit download to resources from given domain.
+mvn clean install
+cp target/Socrata-jar-with-dependencies.jar ~/lib/Socrata.jar
 ```
 
-For example, specifying resource type **dataset** will download a list of all datasets that are available from the Socrata API.
+Download Datasets
+-----------------
 
-
-
-### Download Datasets
-
-There are various ways to download the actual datasets from the Socrata API. One way is to (1) get the value of the permalink element in the catalog entry for a resource, (2) extract the base Url and the dataset identifier (e.g., for [https://data.ny.gov/d/kwxv-fwze](https://data.ny.gov/d/kwxv-fwze) the base Url is https://data.ny.gov/ and the resource identifier is kwxv-fwze), and (3) generate a download Url as *baseUrl*/api/views/*identifier*/*downloadFormat* (e.g., [https://data.ny.gov/api/views/kwxv-fwze/rows.json?accessType=DOWNLOAD](https://data.ny.gov/api/views/kwxv-fwze/rows.json?accessType=DOWNLOAD)). By using `rows.json`, `rows.csv`, or `rows.tsv` the data can be doanloaded in different formats.
-
-The data format that is used by the Socrata GUI for publishing the data differs from to the download data (i.e., tuples are structured Json objects instead of arrays of tuple values). The data is easier to parse but a bit more complicated to get. The JAR file 'SocrataDatasets.jar' is intended to allow downloading datasets in the *advanced Json format*.
+The easiest way to download all datasets for a Socrata domain is as follows. First, create an empty folder (e.g. `~/data). When you run `socrata download --domain=domain-name` the tab-delimited tsv files for the specified domain will be downloaded in a folder that is named after the current date.
 
 ```
-java -jar SocrataDatasets.jar
-  <catalog-file>     : Socarata catalog file
-  <domain>           : Name of the Socrata domain for which datasets are downloaded
-  <threads>          : Number of parallel threads to use for file download
-  <overwrite>        : Overwrite existing files [true | false]
-  <dataset-file>     : Output file that will contain identifier and name of downloaded datasets
-  <output-directory> : Output directory for downloaded Json files
-```
-
-
-### Convert Data in TSV format
-
-The JAR file `Dataset2TSVConverter.jar` converts downloaded datasets in Json format into tab-delimited CSV files.
-
-```
-java -jar Dataset2TSVConverter.jar
-  <input-dir>  : Input directory containing downloaded Json files
-  <threads>    : Number of parallel threads to use
-  <output-dir> : Output directory for TSV files
+cd ~/data
+java -jar ~/lib/Socrata.jar download --domain=data.vermont.gov
 ```

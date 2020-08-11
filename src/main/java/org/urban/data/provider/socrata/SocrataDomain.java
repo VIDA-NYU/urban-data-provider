@@ -15,8 +15,6 @@
  */
 package org.urban.data.provider.socrata;
 
-import org.urban.data.core.object.NamedObject;
-
 /**
  * Socrata domain meta data object.
  * 
@@ -24,7 +22,7 @@ import org.urban.data.core.object.NamedObject;
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class SocrataDomain implements NamedObject {
+public class SocrataDomain implements Comparable<SocrataDomain> {
     
     private final int _count;
     private final String _name;
@@ -34,13 +32,18 @@ public class SocrataDomain implements NamedObject {
         _name = name;
         _count = count;
     }
-    
+
+	@Override
+	public int compareTo(SocrataDomain domain) {
+
+		return _name.compareTo(domain.name());
+	}
+   
     public int count() {
         
         return _count;
     }
     
-    @Override
     public String name() {
         
         return _name;

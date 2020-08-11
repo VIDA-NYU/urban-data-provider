@@ -17,7 +17,8 @@ package org.urban.data.provider.socrata.db;
 
 import java.io.File;
 import java.io.PrintWriter;
-import org.urban.data.core.io.FileSystem;
+
+import org.urban.data.core.util.FileSystem;
 
 /**
  * Synchronized writer that appends datasets to the database file.

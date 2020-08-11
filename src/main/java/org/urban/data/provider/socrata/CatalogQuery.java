@@ -30,8 +30,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.query.json.JQuery;
+
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.util.FileSystem;
 import org.urban.data.core.util.StringHelper;
 
 /**
@@ -111,7 +112,7 @@ public class CatalogQuery {
         
         JsonParser parser = new JsonParser();
         
-        HashSet<String> schema = new HashSet();
+        HashSet<String> schema = new HashSet<>();
         
         try (InputStream is = FileSystem.openFile(_catalogFile)) {
             JsonReader reader = new JsonReader(new InputStreamReader(is));

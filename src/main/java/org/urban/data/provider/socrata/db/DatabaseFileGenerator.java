@@ -20,7 +20,8 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.urban.data.core.io.FileSystem;
+
+import org.urban.data.core.util.FileSystem;
 
 /**
  * Generate Socrata archive database file. This tool is used to re-create the

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 New York University.
+ * Copyright 2018 New York University.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata.parser;
+package org.urban.data.core.util;
 
-import org.urban.data.provider.socrata.profiling.ColumnStats;
+import java.io.PrintWriter;
 
 /**
- * Interface for column value handlers that are used to generate list of unique
- * column values.
+ * Implements a thread safe writer that allows to output lines.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public interface ColumnHandler {
+public class SynchronizedWriter implements AutoCloseable {
     
-    public void add(String value);
-    public int id();
-    public String name();
-    public ColumnStats write() throws java.io.IOException;
+    private final PrintWriter _out;
+    
+    public SynchronizedWriter(PrintWriter out) {
+	
+	_out = out;
+    }
+    
+    @Override
+    public void close() {
+        
+        _out.close();
+    }
+
+    public synchronized void flush() {
+        
+        _out.flush();
+    }
+
+    public synchronized void write(String line) {
+	
+	_out.println(line);
+    }
 }

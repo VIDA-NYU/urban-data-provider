@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.InputStreamReader;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.urban.data.core.io.FileSystem;
+import org.urban.data.core.util.FileSystem;
 
 /**
  * Collection of helper methods for Socrata dataset files.

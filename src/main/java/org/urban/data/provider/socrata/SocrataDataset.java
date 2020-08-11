@@ -34,7 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.urban.data.core.io.FileSystem;
+import org.urban.data.core.util.FileSystem;
 
 /**
  *

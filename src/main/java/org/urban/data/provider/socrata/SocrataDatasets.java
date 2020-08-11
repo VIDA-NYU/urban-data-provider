@@ -26,8 +26,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.urban.data.core.query.json.JQuery;
-import org.urban.data.core.io.FileSystem;
+
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.util.FileSystem;
 
 /**
  * Download all dataset files for a given domain from the Socrata API.

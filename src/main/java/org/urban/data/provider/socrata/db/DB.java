@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import org.apache.commons.csv.CSVParser;
-import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.util.count.Counter;
+import org.urban.data.core.util.FileSystem;
+import org.urban.data.core.util.Counter;
 import org.urban.data.provider.socrata.SocrataHelper;
 
 /**
