@@ -29,6 +29,7 @@ import static org.urban.data.provider.socrata.cli.Args.PARA_EXISTING;
 import static org.urban.data.provider.socrata.cli.Args.PARA_HTML;
 import static org.urban.data.provider.socrata.cli.Args.PARA_ORDERBY;
 import static org.urban.data.provider.socrata.cli.Args.PARA_OUTPUT;
+import static org.urban.data.provider.socrata.cli.Args.PARA_OVERWRITE;
 import static org.urban.data.provider.socrata.cli.Args.PARA_REPORT;
 import static org.urban.data.provider.socrata.cli.Args.PARA_REVERSE;
 import static org.urban.data.provider.socrata.cli.Args.PARA_STATS;
@@ -45,6 +46,8 @@ public class Socrata {
         new Clean(),
         new ColumnFinder(),
         new ColumnValues(),
+        new DomainNames(),
+        new DownloadCatalog(),
         new DownloadDates(),
         new DownloadDatasets(),
         new DiskUsage(),
@@ -68,13 +71,14 @@ public class Socrata {
         PARA_EXISTING,
         PARA_HTML,
         PARA_ORDERBY,
+        PARA_OVERWRITE,
         PARA_REPORT,
         PARA_REVERSE,
         PARA_STATS,
         PARA_THREADS
     };
     
-    private static final String VERSION = "0.1.5";
+    private static final String VERSION = "0.1.6";
     
     private static HashMap<String, Command> commandListing() {
 

@@ -64,6 +64,8 @@ public abstract class CommandImpl implements Command {
                 _parameters.put(name, "Order by value of count");
             } else if (name.equals(Args.PARA_OUTPUT)) {
                 _parameters.put(name, "Output file");
+            } else if (name.equals(Args.PARA_OVERWRITE)) {
+                _parameters.put(name, "Overwrite existing file");
             } else if (name.equals(Args.PARA_REPORT)) {
                 _parameters.put(name, "Print actions but do not execute");
             } else if (name.equals(Args.PARA_REVERSE)) {
