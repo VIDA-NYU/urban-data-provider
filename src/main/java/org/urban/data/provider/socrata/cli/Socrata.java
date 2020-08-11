@@ -45,6 +45,7 @@ public class Socrata {
         new Clean(),
         new ColumnFinder(),
         new ColumnValues(),
+        new DomainNames(),
         new DownloadDates(),
         new DownloadDatasets(),
         new DiskUsage(),
