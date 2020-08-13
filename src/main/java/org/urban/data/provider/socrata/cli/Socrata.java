@@ -80,7 +80,7 @@ public class Socrata {
         PARA_THREADS
     };
     
-    private static final String VERSION = "0.1.7";
+    private static final String VERSION = "0.1.8";
     
     private static HashMap<String, Command> commandListing() {
 
@@ -158,7 +158,7 @@ public class Socrata {
     
     private static void printProgramName() {
         
-        System.out.println("Socrata Data Archive - Command line Tool (Version " + VERSION + ")");
+        System.out.println("Socrata Data Archive - Command line Tool (Version " + VERSION + ")\n");
     }
 
     public static void main(String[] arguments) {
@@ -167,6 +167,8 @@ public class Socrata {
             printHelp();
             System.exit(-1);
         }
+        
+        Socrata.printProgramName();
         
         Args args = new Args(arguments);
         
