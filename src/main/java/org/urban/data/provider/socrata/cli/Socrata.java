@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.urban.data.provider.socrata.cli.Args.PARA_BASEDIR;
+import static org.urban.data.provider.socrata.cli.Args.PARA_CLEAN;
 import static org.urban.data.provider.socrata.cli.Args.PARA_COLUMN;
 import static org.urban.data.provider.socrata.cli.Args.PARA_DATASET;
 import static org.urban.data.provider.socrata.cli.Args.PARA_DATE;
@@ -63,6 +64,7 @@ public class Socrata {
     
     private static final String[] PARAMETERS = {
         PARA_BASEDIR,
+        PARA_CLEAN,
         PARA_DOMAIN,
         PARA_DATASET,
         PARA_DATE,
@@ -78,7 +80,7 @@ public class Socrata {
         PARA_THREADS
     };
     
-    private static final String VERSION = "0.1.6";
+    private static final String VERSION = "0.1.7";
     
     private static HashMap<String, Command> commandListing() {
 

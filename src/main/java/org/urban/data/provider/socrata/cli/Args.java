@@ -51,6 +51,7 @@ public class Args {
      * Command line parameter options
      */
     public final static String PARA_BASEDIR = "dir";
+    public final static String PARA_CLEAN = "clean";
     public final static String PARA_COLUMN = "column";
     public final static String PARA_DATASET = "dataset";
     public final static String PARA_DATE = "date";
@@ -69,6 +70,7 @@ public class Args {
     private final static HashSet<String> PARAMETERS = new HashSet<>(
             Arrays.asList(new String[]{
                 PARA_BASEDIR,
+                PARA_CLEAN,
                 PARA_COLUMN,
                 PARA_DATASET,
                 PARA_DATE,
@@ -131,6 +133,11 @@ public class Args {
         }
     }
     
+    public void add(String key, String value) {
+    
+    	_parameters.put(key,  value);
+    }
+    
     public DatasetQuery asQuery() {
         
         return new DatasetQuery()
@@ -142,6 +149,15 @@ public class Args {
     public String command() {
     
         return _command;
+    }
+    
+    public boolean getClean() {
+        
+        if (_parameters.containsKey(PARA_CLEAN)) {
+            return Boolean.parseBoolean(_parameters.get(PARA_CLEAN));
+        } else {
+            return false;
+        }
     }
 
     public String getColumn() {
