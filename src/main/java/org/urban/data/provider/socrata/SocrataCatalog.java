@@ -119,6 +119,8 @@ public class SocrataCatalog {
      */
     public void download(String type)  throws java.io.IOException {
         
+    	System.out.println("Download catalog for resources of type " + type);
+    	
         List<SocrataDomain> domains = SocrataCatalog.listDomains();
         
         try (JsonWriter out = new JsonWriter(
@@ -168,8 +170,6 @@ public class SocrataCatalog {
         
         HttpClient client = HttpClientBuilder.create().build();
 
-        int resourceCount = 0;
-        
         Gson gson = new Gson();
         for (String[] api : URLS) {
             String scrollId = null;
@@ -222,12 +222,10 @@ public class SocrataCatalog {
                     }
                 }
             }
-            resourceCount += entryCount;
             if (entryCount == resultSetSize) {
                 break;
             }
         }
-        System.out.println(domain + "\t" + resourceCount);
     }
     
     /**
@@ -326,7 +324,7 @@ public class SocrataCatalog {
     
     public static void main(String[] args) {
         
-	System.out.println("Urban Data Integration - Socrata Catalog - Version (" + VERSION + ")\n");
+    	System.out.println("Urban Data Integration - Socrata Catalog - Version (" + VERSION + ")\n");
 
         if ((args.length < 2) || (args.length > 3)) {
             System.out.println(COMMAND);
