@@ -130,6 +130,7 @@ public class DownloadDatasets extends CommandImpl implements Command {
         this.addParameter(Args.PARA_DOMAIN);
         this.addParameter(Args.PARA_DATASET);
         this.addParameter(Args.PARA_DATE, "Date for catalog file (default: today)");
+        this.addParameter(Args.PARA_CLEAN, "Clean-up 404 and HTML files (default: false)");
         this.addParameter(Args.PARA_THREADS);
     }
 
@@ -223,5 +224,12 @@ public class DownloadDatasets extends CommandImpl implements Command {
         }
 
         LOGGER.log(Level.INFO, "DONE {0}", new Date());
+        
+        // Run clean-up if flag is set.
+        if (args.getClean()) {
+        	args.add(Args.PARA_HTML, "true");
+        	args.add(Args.PARA_REPORT, "false");
+        	new Clean().run(args);
+        }
     }
 }
