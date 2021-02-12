@@ -18,10 +18,11 @@ package org.urban.data.provider.socrata.cli;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import org.urban.data.core.query.json.JQuery;
-import org.urban.data.core.query.json.JsonQuery;
-import org.urban.data.core.query.json.ResultTuple;
-import org.urban.data.core.query.json.SelectClause;
+
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.query.JsonQuery;
+import org.urban.data.core.query.ResultTuple;
+import org.urban.data.core.query.SelectClause;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.Dataset;
 import org.urban.data.provider.socrata.db.DatasetQuery;
@@ -74,8 +75,8 @@ public class DatabaseSnapshot extends CommandImpl implements Command {
         boolean statsOnly = args.getStatsOnly();
         
         for (ResultTuple t : rs) {
-            String domainKey = t.get("domain").getAsString();
-            String dsId = t.get("dataset").getAsString();
+            String domainKey = t.getAsString("domain");
+            String dsId = t.getAsString("dataset");
             if (!query.matchesAtOrBefore(new Dataset(dsId, domainKey, date))) {
                 continue;
             }

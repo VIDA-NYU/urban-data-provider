@@ -15,57 +15,73 @@
  */
 package org.urban.data.provider.socrata.profiling;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-
 /**
  * Record of distinct and total values in a column.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
 public class ColumnStats {
-   
-    private int _distinctCount;
-    private int _totalCount;
+
+    private int _decimalCount = 0;
+    private boolean _hasNull = false;
+    private int _intCount = 0;
+    private int _longCount;
+    private int _maxTextLength = 0;
+    private final String _name;
+    private int _textCount = 0;
+    private final SocrataTypeChecker _typeChecker = new SocrataTypeChecker();
     
-    public ColumnStats(int distinctCount, int totalCount) {
+    public ColumnStats(String name) {
         
-        _distinctCount = distinctCount;
-        _totalCount = totalCount;
+        _name = name;
     }
     
-    public ColumnStats() {
+    public void add(String term) {
         
-        this(0, 0);
+        if (term == null) {
+            _hasNull = true;
+        } else if (term.equals("")) {
+            _hasNull = true;
+        } else {
+            Value value = _typeChecker.getValue(term);
+            if (value.isInt()) {
+            	_intCount++;
+            } else if (value.isLong()) {
+            	_longCount++;
+            } else if (value.isDecimal()) {
+            	_decimalCount++;
+            } else {
+            	_textCount++;
+            }
+            if (term.length() > _maxTextLength) {
+                _maxTextLength = term.length();
+            }
+        }
     }
     
-    public int distinctCount() {
+    public String name() {
         
-        return _distinctCount;
+        return _name;
     }
     
-    public void inc(int count) {
+    public String sqlStmt() {
         
-        _distinctCount++;
-        _totalCount += count;
-    }
-    
-    public JsonObject toJson() {
-        
-        JsonObject doc = new JsonObject();
-        doc.add("distinctCount", new JsonPrimitive(_distinctCount));
-        doc.add("totalCount", new JsonPrimitive(_totalCount));
-        return doc;
-    }
-    
-    @Override
-    public String toString() {
-        
-        return _distinctCount + "\t" + _totalCount;
-    }
-    
-    public int totalCount() {
-    
-        return _totalCount;
+        String sql = _name;
+        if (_textCount > 0) {
+            sql += " VARCHAR(" + _maxTextLength + ")";
+        } else if (_decimalCount > 0) {
+            sql += " REAL";
+        } else if (_longCount > 0) {
+            sql += " BIGINT";
+        } else if (_intCount > 0) {
+            sql += " INTEGER";
+        } else {
+            // The column is empty.
+            sql += " CHAR(1)";
+        }
+        if (!_hasNull) {
+            sql += " NOT NULL";
+        }
+        return sql;
     }
 }

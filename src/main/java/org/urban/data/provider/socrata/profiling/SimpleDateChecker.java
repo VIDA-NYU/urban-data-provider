@@ -32,7 +32,7 @@ public class SimpleDateChecker {
 	
         _delim = delim;
         _minLength = minLength;
-        _df = new SimpleDateFormat("'^'" + pattern + "'$'");
+        _df = new SimpleDateFormat(pattern);
         _df.setLenient(false);
     }
 
@@ -49,7 +49,7 @@ public class SimpleDateChecker {
     public DateValue getValue(String value) {
 
         try {
-            Date date = _df.parse("^" + value + "$");
+            Date date = _df.parse(value);
             if (_delim != null) {
                 String[] tokens = value.split(_delim);
                 if (tokens.length <= _minLength.length) {

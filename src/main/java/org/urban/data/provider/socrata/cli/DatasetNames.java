@@ -16,11 +16,12 @@
 package org.urban.data.provider.socrata.cli;
 
 import java.io.PrintWriter;
-import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.query.json.JQuery;
-import org.urban.data.core.query.json.JsonQuery;
-import org.urban.data.core.query.json.ResultTuple;
-import org.urban.data.core.query.json.SelectClause;
+
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.query.JsonQuery;
+import org.urban.data.core.query.ResultTuple;
+import org.urban.data.core.query.SelectClause;
+import org.urban.data.core.util.FileSystem;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.Dataset;
 import org.urban.data.provider.socrata.db.DatasetQuery;
@@ -71,8 +72,8 @@ public class DatasetNames extends CommandImpl implements Command {
         JsonQuery con = new JsonQuery(db.catalogFile(date));
         for (ResultTuple tuple : con.executeQuery(select, true)) {
             Dataset dataset = new Dataset(
-                    tuple.get("dataset").getAsString(),
-                    tuple.get("domain").getAsString(),
+                    tuple.getAsString("dataset"),
+                    tuple.getAsString("domain"),
                     date
             );
             if (query.matches(dataset)) {

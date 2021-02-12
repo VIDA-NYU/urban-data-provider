@@ -13,39 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.urban.data.provider.socrata;
+package org.urban.data.core.util;
+
+import java.io.PrintWriter;
 
 /**
- * Socrata domain meta data object.
- * 
- * Simply contains the domain name and the resource count.
+ * Implements a thread safe writer that allows to output lines.
  * 
  * @author Heiko Mueller <heiko.mueller@nyu.edu>
  */
-public class SocrataDomain implements Comparable<SocrataDomain> {
+public class SynchronizedWriter implements AutoCloseable {
     
-    private final int _count;
-    private final String _name;
+    private final PrintWriter _out;
     
-    public SocrataDomain(String name, int count) {
-        
-        _name = name;
-        _count = count;
-    }
-
-	@Override
-	public int compareTo(SocrataDomain domain) {
-
-		return _name.compareTo(domain.name());
-	}
-   
-    public int count() {
-        
-        return _count;
+    public SynchronizedWriter(PrintWriter out) {
+	
+	_out = out;
     }
     
-    public String name() {
+    @Override
+    public void close() {
         
-        return _name;
+        _out.close();
+    }
+
+    public synchronized void flush() {
+        
+        _out.flush();
+    }
+
+    public synchronized void write(String line) {
+	
+	_out.println(line);
     }
 }

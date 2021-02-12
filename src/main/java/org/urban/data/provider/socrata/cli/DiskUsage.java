@@ -18,7 +18,8 @@ package org.urban.data.provider.socrata.cli;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.urban.data.core.io.FileSystem;
+
+import org.urban.data.core.util.FileSystem;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.Dataset;
 import org.urban.data.provider.socrata.db.DatasetQuery;

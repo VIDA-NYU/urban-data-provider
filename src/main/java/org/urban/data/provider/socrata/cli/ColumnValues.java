@@ -18,8 +18,8 @@ package org.urban.data.provider.socrata.cli;
 import java.util.List;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.urban.data.core.value.ValueCounter;
-import org.urban.data.core.value.ValueIndex;
+import org.urban.data.core.util.ValueCounter;
+import org.urban.data.core.util.ValueIndex;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.Dataset;
 

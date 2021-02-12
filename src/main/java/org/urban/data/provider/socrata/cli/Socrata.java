@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.urban.data.provider.socrata.cli.Args.PARA_BASEDIR;
+import static org.urban.data.provider.socrata.cli.Args.PARA_CLEAN;
 import static org.urban.data.provider.socrata.cli.Args.PARA_COLUMN;
 import static org.urban.data.provider.socrata.cli.Args.PARA_DATASET;
 import static org.urban.data.provider.socrata.cli.Args.PARA_DATE;
@@ -29,6 +30,7 @@ import static org.urban.data.provider.socrata.cli.Args.PARA_EXISTING;
 import static org.urban.data.provider.socrata.cli.Args.PARA_HTML;
 import static org.urban.data.provider.socrata.cli.Args.PARA_ORDERBY;
 import static org.urban.data.provider.socrata.cli.Args.PARA_OUTPUT;
+import static org.urban.data.provider.socrata.cli.Args.PARA_OVERWRITE;
 import static org.urban.data.provider.socrata.cli.Args.PARA_REPORT;
 import static org.urban.data.provider.socrata.cli.Args.PARA_REVERSE;
 import static org.urban.data.provider.socrata.cli.Args.PARA_STATS;
@@ -45,6 +47,8 @@ public class Socrata {
         new Clean(),
         new ColumnFinder(),
         new ColumnValues(),
+        new DomainNames(),
+        new DownloadCatalog(),
         new DownloadDates(),
         new DownloadDatasets(),
         new DiskUsage(),
@@ -61,6 +65,7 @@ public class Socrata {
     
     private static final String[] PARAMETERS = {
         PARA_BASEDIR,
+        PARA_CLEAN,
         PARA_DOMAIN,
         PARA_DATASET,
         PARA_DATE,
@@ -69,13 +74,14 @@ public class Socrata {
         PARA_EXISTING,
         PARA_HTML,
         PARA_ORDERBY,
+        PARA_OVERWRITE,
         PARA_REPORT,
         PARA_REVERSE,
         PARA_STATS,
         PARA_THREADS
     };
     
-    private static final String VERSION = "0.1.6";
+    private static final String VERSION = "0.1.8";
     
     private static HashMap<String, Command> commandListing() {
 
@@ -153,7 +159,7 @@ public class Socrata {
     
     private static void printProgramName() {
         
-        System.out.println("Socrata Data Archive - Command line Tool (Version " + VERSION + ")");
+        System.out.println("Socrata Data Archive - Command line Tool (Version " + VERSION + ")\n");
     }
 
     public static void main(String[] arguments) {
@@ -162,6 +168,8 @@ public class Socrata {
             printHelp();
             System.exit(-1);
         }
+        
+        Socrata.printProgramName();
         
         Args args = new Args(arguments);
         

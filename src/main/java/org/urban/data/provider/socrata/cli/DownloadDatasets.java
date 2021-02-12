@@ -32,11 +32,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import org.apache.commons.io.IOUtils;
-import org.urban.data.core.io.FileSystem;
-import org.urban.data.core.query.json.JQuery;
-import org.urban.data.core.query.json.JsonQuery;
-import org.urban.data.core.query.json.ResultTuple;
-import org.urban.data.core.query.json.SelectClause;
+import org.urban.data.core.query.JQuery;
+import org.urban.data.core.query.JsonQuery;
+import org.urban.data.core.query.ResultTuple;
+import org.urban.data.core.query.SelectClause;
+import org.urban.data.core.util.FileSystem;
 import org.urban.data.provider.socrata.SocrataCatalog;
 import org.urban.data.provider.socrata.db.DB;
 import org.urban.data.provider.socrata.db.DatabaseWriter;
@@ -99,9 +99,9 @@ public class DownloadDatasets extends CommandImpl implements Command {
 
             ResultTuple tuple;
             while ((tuple = _datasets.poll()) != null) {
-                String domain = tuple.get("domain").getAsString();
-                String dataset = tuple.get("dataset").getAsString();
-                String permalink = tuple.get("link").getAsString();
+                String domain = tuple.getAsString("domain");
+                String dataset = tuple.getAsString("dataset");
+                String permalink = tuple.getAsString("link");
                 if (permalink.contains("/d/")) {
                     String url = permalink.replace("/d/", "/api/views/");
                     url += "/rows.tsv?accessType=DOWNLOAD";
@@ -130,6 +130,7 @@ public class DownloadDatasets extends CommandImpl implements Command {
         this.addParameter(Args.PARA_DOMAIN);
         this.addParameter(Args.PARA_DATASET);
         this.addParameter(Args.PARA_DATE, "Date for catalog file (default: today)");
+        this.addParameter(Args.PARA_CLEAN, "Clean-up 404 and HTML files (default: false)");
         this.addParameter(Args.PARA_THREADS);
     }
 
@@ -174,8 +175,8 @@ public class DownloadDatasets extends CommandImpl implements Command {
         
         List<ResultTuple> rs =  new JsonQuery(catalogFile).executeQuery(select, true);
         for (ResultTuple tuple : rs) {
-            String domain = tuple.get("domain").getAsString();
-            String dataset = tuple.get("dataset").getAsString();
+            String domain = tuple.getAsString("domain");
+            String dataset = tuple.getAsString("dataset");
             if (!query.matches(new Dataset(dataset, domain, date))) {
                 continue;
             }
@@ -190,13 +191,12 @@ public class DownloadDatasets extends CommandImpl implements Command {
             }
             Date lastUpdate;
             try {
-                String dt = tuple.get("updatedAt")
-                        .getAsString()
-                        .substring(0, tuple.get("updatedAt").getAsString().indexOf("T"))
+                String dt = tuple.getAsString("updatedAt")
+                        .substring(0, tuple.getAsString("updatedAt").indexOf("T"))
                         .replaceAll("-", "");
                 lastUpdate = DB.DF.parse(dt);
             } catch (java.text.ParseException ex) {
-                LOGGER.log(Level.WARNING, tuple.get("updatedAt").getAsString(), ex);
+                LOGGER.log(Level.WARNING, tuple.getAsString("updatedAt"), ex);
                 continue;
             }
             if (lastDownload == null) {
@@ -224,5 +224,12 @@ public class DownloadDatasets extends CommandImpl implements Command {
         }
 
         LOGGER.log(Level.INFO, "DONE {0}", new Date());
+        
+        // Run clean-up if flag is set.
+        if (args.getClean()) {
+        	args.add(Args.PARA_HTML, "true");
+        	args.add(Args.PARA_REPORT, "false");
+        	new Clean().run(args);
+        }
     }
 }

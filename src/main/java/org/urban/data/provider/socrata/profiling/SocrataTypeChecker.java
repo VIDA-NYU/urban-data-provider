@@ -38,11 +38,16 @@ public class SocrataTypeChecker {
             new SimpleDateChecker("yyyy-MM-dd'T'HH:mm:ss.SSS"),
             new SimpleDateChecker("yyyy-MM-dd", "-", new int[]{2, 1, 1}),
             new SimpleDateChecker("MM/dd/yyyy HH:mm:ss"),
+            new SimpleDateChecker("yyyy/MM/dd HH:mm:ss"),
             new SimpleDateChecker("MM/dd/yyyy", "/", new int[]{1, 1, 2}),
+            new SimpleDateChecker("yyyy/MM/dd", "/", new int[]{2, 1, 1}),
             new SimpleDateChecker("dd/MM/yyyy", "/", new int[]{1, 1, 2}),
             new SimpleDateChecker("MM/dd/yy", "/", new int[]{1, 1, 2}),
             new SimpleDateChecker("dd/MM/yy", "/", new int[]{1, 1, 2}),
             new SimpleDateChecker("dd-MMM-yy", "-", new int[]{2, 3, 2}),
+            new SimpleDateChecker("yyyy MMM dd"),
+            new SimpleDateChecker("MMM dd yyyy"),
+            new SimpleDateChecker("dd MMM yyyy"),
             new SimpleDateChecker("MMM-dd"),
             new SimpleDateChecker("dd-MMM")
         };
@@ -72,8 +77,18 @@ public class SocrataTypeChecker {
         if (GeoPointValue.isGeoPoint(value)) {
             return new GeoPointValue(value);
         }
+        
+        // Check for dates
+        String dateValue;
+        if ((value.endsWith(" AM")) || (value.endsWith(" PM"))) {
+            dateValue = value.substring(0, value.length() - 3).trim();
+        } else if ((value.endsWith(" AM +0000")) || (value.endsWith(" PM +0000"))) {
+            dateValue = value.substring(0, value.length() - 9).trim();
+        } else {
+            dateValue = value;
+        }
         for (SimpleDateChecker dateChecker : _dateCheckers) {
-            DateValue date = dateChecker.getValue(value);
+            DateValue date = dateChecker.getValue(dateValue);
             if (date != null) {
                 return date;
             }

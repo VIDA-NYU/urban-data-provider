@@ -51,6 +51,7 @@ public class Args {
      * Command line parameter options
      */
     public final static String PARA_BASEDIR = "dir";
+    public final static String PARA_CLEAN = "clean";
     public final static String PARA_COLUMN = "column";
     public final static String PARA_DATASET = "dataset";
     public final static String PARA_DATE = "date";
@@ -60,6 +61,7 @@ public class Args {
     public final static String PARA_HTML = "html";
     public final static String PARA_ORDERBY = "orderby";
     public final static String PARA_OUTPUT = "output";
+    public final static String PARA_OVERWRITE = "overwrite";
     public final static String PARA_REPORT = "report";
     public final static String PARA_REVERSE = "reverse";
     public final static String PARA_STATS = "stats";
@@ -68,6 +70,7 @@ public class Args {
     private final static HashSet<String> PARAMETERS = new HashSet<>(
             Arrays.asList(new String[]{
                 PARA_BASEDIR,
+                PARA_CLEAN,
                 PARA_COLUMN,
                 PARA_DATASET,
                 PARA_DATE,
@@ -77,6 +80,7 @@ public class Args {
                 PARA_HTML,
                 PARA_ORDERBY,
                 PARA_OUTPUT,
+                PARA_OVERWRITE,
                 PARA_REPORT,
                 PARA_REVERSE,
                 PARA_STATS,
@@ -129,6 +133,11 @@ public class Args {
         }
     }
     
+    public void add(String key, String value) {
+    
+    	_parameters.put(key,  value);
+    }
+    
     public DatasetQuery asQuery() {
         
         return new DatasetQuery()
@@ -140,6 +149,15 @@ public class Args {
     public String command() {
     
         return _command;
+    }
+    
+    public boolean getClean() {
+        
+        if (_parameters.containsKey(PARA_CLEAN)) {
+            return Boolean.parseBoolean(_parameters.get(PARA_CLEAN));
+        } else {
+            return false;
+        }
     }
 
     public String getColumn() {
@@ -256,6 +274,15 @@ public class Args {
         }
     }
     
+    public boolean getOverwrite() {
+        
+        if (_parameters.containsKey(PARA_OVERWRITE)) {
+            return Boolean.parseBoolean(_parameters.get(PARA_OVERWRITE));
+        } else {
+            return false;
+        }
+    }
+   
     public boolean getReport() {
         
         if (_parameters.containsKey(PARA_REPORT)) {
