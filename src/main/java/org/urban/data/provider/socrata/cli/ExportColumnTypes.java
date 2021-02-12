@@ -86,11 +86,12 @@ public class ExportColumnTypes extends CommandImpl implements Command {
                 for (int iColumn = 0; iColumn < names.size(); iColumn++) {
                     out.println(
                             String.format(
-                                    "%s\t%s\t%s\t%s",
+                                    "%s\t%s\t%d\t%s\t%s",
                                     domain,
                                     dataset,
+                                    iColumn,
                                     names.get(iColumn).getAsString(),
-                                    datatypes.get(iColumn).getAsString()
+                                    datatypes.get(iColumn).getAsString().toLowerCase()
                             )
                     );
                 }
