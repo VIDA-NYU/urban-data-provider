@@ -71,8 +71,8 @@ public class DatasetNames extends CommandImpl implements Command {
         JsonQuery con = new JsonQuery(db.catalogFile(date));
         for (ResultTuple tuple : con.executeQuery(select, true)) {
             Dataset dataset = new Dataset(
-                    tuple.get("dataset"),
-                    tuple.get("domain"),
+                    tuple.get("dataset").getAsString(),
+                    tuple.get("domain").getAsString(),
                     date
             );
             if (query.matches(dataset)) {

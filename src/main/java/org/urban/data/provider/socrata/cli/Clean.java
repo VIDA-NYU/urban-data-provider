@@ -67,11 +67,12 @@ public class Clean extends CommandImpl implements Command {
             try {
                 for (CSVRecord record : in) {
                     lineCount++;
-                    if (!includeHtml) {
-                        break;
-                    }
                     if (record.size() == 1) {
                         String value = record.get(0).trim();
+                        if (value.toUpperCase().startsWith("<!DOCTYPE HTML")) {
+                            lineCount = 0;
+                            break;
+                        }
                         for (String label : HTML_LABELS) {
                             if (!matchedLabels.contains(label)) {
                                 if (value.startsWith("<" + label)) {

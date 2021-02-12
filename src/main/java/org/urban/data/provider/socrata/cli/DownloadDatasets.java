@@ -99,9 +99,9 @@ public class DownloadDatasets extends CommandImpl implements Command {
 
             ResultTuple tuple;
             while ((tuple = _datasets.poll()) != null) {
-                String domain = tuple.get("domain");
-                String dataset = tuple.get("dataset");
-                String permalink = tuple.get("link");
+                String domain = tuple.get("domain").getAsString();
+                String dataset = tuple.get("dataset").getAsString();
+                String permalink = tuple.get("link").getAsString();
                 if (permalink.contains("/d/")) {
                     String url = permalink.replace("/d/", "/api/views/");
                     url += "/rows.tsv?accessType=DOWNLOAD";
@@ -174,8 +174,8 @@ public class DownloadDatasets extends CommandImpl implements Command {
         
         List<ResultTuple> rs =  new JsonQuery(catalogFile).executeQuery(select, true);
         for (ResultTuple tuple : rs) {
-            String domain = tuple.get("domain");
-            String dataset = tuple.get("dataset");
+            String domain = tuple.get("domain").getAsString();
+            String dataset = tuple.get("dataset").getAsString();
             if (!query.matches(new Dataset(dataset, domain, date))) {
                 continue;
             }
@@ -191,11 +191,12 @@ public class DownloadDatasets extends CommandImpl implements Command {
             Date lastUpdate;
             try {
                 String dt = tuple.get("updatedAt")
-                        .substring(0, tuple.get("updatedAt").indexOf("T"))
+                        .getAsString()
+                        .substring(0, tuple.get("updatedAt").getAsString().indexOf("T"))
                         .replaceAll("-", "");
                 lastUpdate = DB.DF.parse(dt);
             } catch (java.text.ParseException ex) {
-                LOGGER.log(Level.WARNING, tuple.get("updatedAt"), ex);
+                LOGGER.log(Level.WARNING, tuple.get("updatedAt").getAsString(), ex);
                 continue;
             }
             if (lastDownload == null) {
