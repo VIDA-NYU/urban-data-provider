@@ -65,7 +65,7 @@ public class ExportColumnTypes extends CommandImpl implements Command {
         SelectClause select = new SelectClause()
                 .add("domain", new JQuery("/metadata/domain"))
                 .add("dataset", new JQuery("/resource/id"))
-                .add("names", new JQuery("/resource/columns_field_name"))
+                .add("names", new JQuery("/resource/columns_name"))
                 .add("datatypes", new JQuery("/resource/columns_datatype"));
         
         DatasetQuery query = args.asQuery();
@@ -90,8 +90,8 @@ public class ExportColumnTypes extends CommandImpl implements Command {
                                     domain,
                                     dataset,
                                     iColumn,
-                                    names.get(iColumn).getAsString(),
-                                    datatypes.get(iColumn).getAsString().toLowerCase()
+                                    names.get(iColumn).getAsString().replaceAll("\\s+", " ").trim(),
+                                    datatypes.get(iColumn).getAsString().replaceAll("\\s+", " ").trim().toLowerCase()
                             )
                     );
                 }
