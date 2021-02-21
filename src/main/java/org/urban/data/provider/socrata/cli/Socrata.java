@@ -81,7 +81,7 @@ public class Socrata {
         PARA_THREADS
     };
     
-    private static final String VERSION = "0.1.8";
+    private static final String VERSION = "0.1.9";
     
     private static HashMap<String, Command> commandListing() {
 
